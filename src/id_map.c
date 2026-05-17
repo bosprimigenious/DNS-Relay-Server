@@ -1,4 +1,5 @@
 #include "id_map.h"
+#include <stddef.h>
 
 static id_map_record_t g_records[ID_MAP_SIZE];
 static int g_next_slot = 0;
@@ -15,7 +16,7 @@ int add_record(uint16_t original_id,
         checked++;
     }
 
-    if (checked == ID_MAP_SIZE && g_records[g_next_slot].in_use) {
+    if (checked == ID_MAP_SIZE) {
         return -1;
     }
 
@@ -39,14 +40,16 @@ id_map_record_t *find_record_by_new_id(uint16_t new_id) {
         }
     }
 
-    return 0;
+    return NULL;
 }
 
 void clear_timeout_records(time_t now, time_t timeout_seconds) {
     int i;
 
     for (i = 0; i < ID_MAP_SIZE; i++) {
-        if (g_records[i].in_use && (now - g_records[i].created_at) > timeout_seconds) {
+        if (g_records[i].in_use &&
+            now >= g_records[i].created_at &&
+            (now - g_records[i].created_at) >= timeout_seconds) {
             g_records[i].in_use = 0;
         }
     }

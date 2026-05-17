@@ -3,6 +3,21 @@
 
 #include <arpa/inet.h>
 #include <stdint.h>
+#if defined(__linux__) || defined(__GLIBC__)
+#include <endian.h>
+#endif
+
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#define DNS_LITTLE_ENDIAN_BITFIELD 1
+#elif defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+#define DNS_LITTLE_ENDIAN_BITFIELD 0
+#elif defined(BYTE_ORDER) && (BYTE_ORDER == LITTLE_ENDIAN)
+#define DNS_LITTLE_ENDIAN_BITFIELD 1
+#elif defined(BYTE_ORDER) && (BYTE_ORDER == BIG_ENDIAN)
+#define DNS_LITTLE_ENDIAN_BITFIELD 0
+#else
+#error "Unable to determine host byte order for DNS bit-fields. Please define __BYTE_ORDER__ or BYTE_ORDER for your platform."
+#endif
 
 /* RFC 1035 DNS message header: 12 bytes */
 typedef struct {
@@ -11,7 +26,7 @@ typedef struct {
     union {
         uint16_t value;
         struct {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#if DNS_LITTLE_ENDIAN_BITFIELD
             uint16_t rcode : 4;
             uint16_t z : 3;
             uint16_t ra : 1;
