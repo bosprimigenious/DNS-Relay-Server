@@ -8,6 +8,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "dns_protocol.h"
+#include "id_map.h"
+
 #define DNS_MAX_MESSAGE_SIZE 512
 #define SELECT_TIMEOUT_USEC 10000
 

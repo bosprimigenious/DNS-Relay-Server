@@ -1,5 +1,5 @@
 CC := gcc
-CFLAGS := -Wall -Wextra -g -Iinclude
+CFLAGS := -Wall -Wextra -g -std=c11 -Iinclude
 SRC_DIR := src
 BUILD_DIR := build
 TARGET := dnsrelay

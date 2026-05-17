@@ -80,4 +80,45 @@ static inline void dns_header_network_to_host(dns_header_t *header) {
     header->arcount = ntohs(header->arcount);
 }
 
+#define DNS_PORT            53
+#define DNS_MAX_MESSAGE     512
+#define DNS_MAX_LABEL_LEN   63
+#define DNS_MAX_NAME_LEN    255
+#define DNS_QTYPE_A         1
+#define DNS_QTYPE_AAAA      28
+#define DNS_QTYPE_CNAME     5
+#define DNS_QTYPE_MX        15
+#define DNS_QTYPE_NS        2
+#define DNS_QCLASS_IN       1
+#define DNS_RCODE_NOERROR   0
+#define DNS_RCODE_FORMAT    1
+#define DNS_RCODE_SERVFAIL  2
+#define DNS_RCODE_NXDOMAIN  3
+#define DNS_RCODE_NOTIMP    4
+#define DNS_RCODE_REFUSED   5
+#define DNS_TYPE_A          1
+#define DNS_TYPE_AAAA       28
+#define DNS_TYPE_CNAME      5
+#define DNS_TYPE_MX         15
+#define DNS_TYPE_NS         2
+
+typedef struct {
+    uint16_t qtype;
+    uint16_t qclass;
+} dns_question_fixed_t;
+
+typedef struct {
+    uint16_t type;
+    uint16_t class_;
+    uint32_t ttl;
+    uint16_t rdlength;
+} dns_rr_fixed_t;
+
+int dns_name_decode(const unsigned char *packet, int *offset,
+                    char *out_buf, int buf_size);
+
+int dns_name_encode(const char *name, unsigned char *out_buf, int buf_size);
+
+int dns_name_skip(const unsigned char *packet, int *offset);
+
 #endif
