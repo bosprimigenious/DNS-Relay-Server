@@ -1,0 +1,94 @@
+# DNS-Relay-Server Cursor Rules
+# BUPT 计算机网络课程设计 — DNS 中继服务器
+
+## 项目核心约束（每次生成代码前必读）
+
+### 1. 零忙等待（最高红线）
+- 主循环必须使用 `select()` 阻塞等待 UDP socket 可读事件
+- `struct timeval` 超时设为 10ms（`tv_sec=0, tv_usec=10000`）
+- **严禁** `while(1)` 空转轮询导致 CPU 100%
+
+### 2. 强模块分离（严禁一坨端）
+- `include/dns_protocol.h` — DNS 协议数据结构 + 编解码声明
+- `src/dns_protocol.c` — 域名编解码 + 报文构造实现
+- `include/id_map.h` — ID 映射表接口声明
+- `src/id_map.c` — ID 映射表实现
+- `include/config.h` — 配置加载接口声明
+- `src/config.c` — dnsrelay.txt 解析实现
+- `src/main.c` — 主循环 + select 事件分发
+- 每个 `.c` 文件只负责一个模块，不得跨模块写逻辑
+
+### 3. 网络字节序（大端）转换
+- 所有多字节字段写入 DNS 报文前必须 `htons()` / `htonl()`
+- 所有多字节字段从 DNS 报文读出后必须 `ntohs()` / `ntohl()`
+- `dns_header_t` 的位域结构已处理好端序，使用 `dns_header_host_to_network()` / `dns_header_network_to_host()` 转换
+
+### 4. DNS 域名编码规则
+- 点分十进制 `"www.baidu.com"` → 长度前缀编码 `\x03www\x05baidu\x03com\x00`
+- 每个 label 最长 63 字节，整域名最长 255 字节
+- DNS 报文支持指针压缩（`0xC0` 标记），解码时必须处理
+
+### 5. 三大功能分离
+- **本地拦截**：IP 为 `0.0.0.0` 的域名 → 构造 DNS 响应，RCODE=3 (NXDOMAIN)
+- **本地解析**：IP 非 `0.0.0.0` 的已知域名 → 构造 DNS 响应，ANCOUNT=1，返回 A 记录
+- **并发中继**：未知域名 → 修改 Transaction ID，转发到外网 DNS（如 114.114.114.114），收到响应后还原 ID 并转发给客户端；支持超时清理
+
+### 6. 编译标准
+- `gcc -Wall -Wextra -g -std=c11`
+- 零警告、零错误
+- Makefile 使用 `$(wildcard)` 自动发现 `src/*.c`
+
+### 7. 编程风格
+- 函数不超过 50 行
+- 不写冗余注释，代码自解释
+- 变量声明在函数顶部
+- error 路径用 goto cleanup 模式统一释放资源
+
+### 8. 状态文件约定（强制）
+- **路径**：`C:\projects\DNS-Relay-Server\.cursor-status.txt`
+- **格式**：每行一条记录，字段以 ` | ` 分隔（空格+竖线+空格）
+  ```
+  Phase | Status | Time
+  1     | done   | 2026-05-18T14:30:00+08:00
+  2     | in_progress | 2026-05-18T14:35:00+08:00
+  ```
+- **Phase 取值**：`1` `2` `3` `4` `5` `fix-A` `fix-B`
+- **Status 取值**：`pending` `in_progress` `done` `failed`
+- **Time**：ISO 8601 带时区偏移，使用当前系统时间
+- **规则**：
+  - 开始一个 Phase 时，追加一行 `Phase | in_progress | <now>`
+  - 完成一个 Phase 且 `make clean && make` 通过后，追加一行 `Phase | done | <now>`
+  - 若编译或测试失败，追加一行 `Phase | failed | <now>` 并停止后续 Phase
+  - 不要删除已有行，只追加
+  - 文件不存在时自动创建，第一行为表头 `Phase | Status | Time`
+
+### 9. Git 提交规范（强制）
+- **提交格式**：`<type>: <中文描述>`
+- **type 取值**：
+  - `feat` — 新功能（Phase 完成、新增模块）
+  - `fix` — 修复 Bug（Code Review 后修复）
+  - `docs` — 文档变更（README、报告、注释）
+  - `refactor` — 重构（改结构不改行为）
+  - `chore` — 杂务（Makefile、.gitignore、配置文件）
+- **提交时机**：每个 Phase 完成并通过 `make clean && make` 后立即 commit
+- **推送频率**：每 3 小时执行一次 `git push`；若距上次 push 超过 3 小时且当前有未推送 commit，Phase 完成后一并 push
+- **禁止**：提交 `build/`、`dnsrelay`、`.env`、私钥、Token
+- **示例**：
+  ```
+  git add -A && git commit -m "feat: 完成 Phase 1 DNS 协议数据结构与域名编解码"
+  git commit -m "fix: 本地解析增加 QTYPE 检查，非 A 查询返回空 NOERROR"
+  git commit -m "chore: 添加 .cursor-status.txt 状态追踪"
+  ```
+
+### 任务交付守护进程（Crucial）
+当你（Cursor）判定当前 Phase 的 TODO 已全部 Done 时，你必须立即且仅执行以下两个步骤：
+1. 向文件 `C:\projects\DNS-Relay-Server\.cursor-status.txt` 覆盖写入当前状态（包含 Phase、Status、Time）。
+2. **向审查请求文件写入审查请求**（触发 Claude 每 2 分钟自动轮询的 Code Review）：
+   ```
+   echo "Phase=<Phase编号> | Status=done | Files=<修改的文件列表> | Time=$(date +%Y-%m-%dT%H:%M:%S%z)" > C:\projects\DNS-Relay-Server\.cursor-review-request.txt
+   ```
+   示例：
+   ```
+   echo "Phase=1 | Status=done | Files=include/dns_protocol.h,src/dns_protocol.c,src/main.c,Makefile | Time=$(date +%Y-%m-%dT%H:%M:%S%z)" > C:\projects\DNS-Relay-Server\.cursor-review-request.txt
+   ```
+   写完此文件后，Claude 的 Cron 守护进程会在 2 分钟内自动捡起审查请求并输出 Code Review 结果。你无需手动执行 `claude` 命令。
