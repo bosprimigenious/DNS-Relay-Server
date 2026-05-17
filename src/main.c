@@ -41,6 +41,7 @@ static int relay_to_upstream(int sockfd,
     ssize_t resp_len;
     ssize_t sent;
     time_t now;
+    int map_ok;
 
     upstream_fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (upstream_fd < 0) {
@@ -68,10 +69,16 @@ static int relay_to_upstream(int sockfd,
     }
 
     now = time(NULL);
-    if (add_record(original_id, new_id, client_addr->sin_addr,
-                   client_addr->sin_port, now) != 0) {
-        close(upstream_fd);
-        return -1;
+    map_ok = add_record(original_id, new_id, client_addr->sin_addr,
+                        client_addr->sin_port, now);
+    if (map_ok != 0) {
+        clear_timeout_records(now, 0);
+        map_ok = add_record(original_id, new_id, client_addr->sin_addr,
+                            client_addr->sin_port, now);
+        if (map_ok != 0) {
+            close(upstream_fd);
+            return -1;
+        }
     }
 
     memcpy(modified_query, query, (size_t)query_len);
