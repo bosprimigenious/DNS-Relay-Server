@@ -223,14 +223,26 @@ int main(void) {
                                    (const struct sockaddr *)&client_addr, client_len);
                         }
                     } else {
-                        unsigned char resp[DNS_MAX_MESSAGE];
-                        int rlen;
+                        if (qtype == DNS_QTYPE_A) {
+                            unsigned char resp[DNS_MAX_MESSAGE];
+                            int rlen;
 
-                        rlen = dns_build_a_response(buffer, (int)received, resp,
-                                                    sizeof(resp), entry->ip, 300);
-                        if (rlen > 0) {
-                            sendto(sockfd, resp, (size_t)rlen, 0,
-                                   (const struct sockaddr *)&client_addr, client_len);
+                            rlen = dns_build_a_response(buffer, (int)received, resp,
+                                                        sizeof(resp), entry->ip, 300);
+                            if (rlen > 0) {
+                                sendto(sockfd, resp, (size_t)rlen, 0,
+                                       (const struct sockaddr *)&client_addr, client_len);
+                            }
+                        } else {
+                            unsigned char resp[DNS_MAX_MESSAGE];
+                            int rlen;
+
+                            rlen = dns_build_error_response(buffer, (int)received, resp,
+                                                            sizeof(resp), DNS_RCODE_NOERROR);
+                            if (rlen > 0) {
+                                sendto(sockfd, resp, (size_t)rlen, 0,
+                                       (const struct sockaddr *)&client_addr, client_len);
+                            }
                         }
                     }
                 } else {
