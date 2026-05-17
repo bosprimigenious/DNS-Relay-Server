@@ -121,4 +121,15 @@ int dns_name_encode(const char *name, unsigned char *out_buf, int buf_size);
 
 int dns_name_skip(const unsigned char *packet, int *offset);
 
+int dns_parse_query(const unsigned char *packet, int packet_len, char *qname,
+                    int qname_size, uint16_t *qtype, uint16_t *qclass);
+
+int dns_build_error_response(const unsigned char *query, int query_len,
+                             unsigned char *response, int response_size,
+                             uint8_t rcode);
+
+int dns_build_a_response(const unsigned char *query, int query_len,
+                         unsigned char *response, int response_size,
+                         struct in_addr ip, uint32_t ttl);
+
 #endif
