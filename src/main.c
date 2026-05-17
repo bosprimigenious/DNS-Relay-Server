@@ -248,9 +248,21 @@ int main(void) {
                 } else {
                     const dns_header_t *hdr = (const dns_header_t *)buffer;
                     uint16_t original_id = ntohs(hdr->id);
+                    int relay_ret;
 
-                    relay_to_upstream(sockfd, buffer, (int)received, original_id,
-                                      &client_addr);
+                    relay_ret = relay_to_upstream(sockfd, buffer, (int)received,
+                                                  original_id, &client_addr);
+                    if (relay_ret != 0) {
+                        unsigned char err_resp[DNS_MAX_MESSAGE];
+                        int err_len;
+
+                        err_len = dns_build_error_response(buffer, (int)received, err_resp,
+                                                           sizeof(err_resp), DNS_RCODE_SERVFAIL);
+                        if (err_len > 0) {
+                            sendto(sockfd, err_resp, (size_t)err_len, 0,
+                                   (const struct sockaddr *)&client_addr, client_len);
+                        }
+                    }
                 }
             }
         }
