@@ -116,16 +116,46 @@ int main(void) {
     int sockfd;
     struct sockaddr_in server_addr;
 
+    int reuse = 1;
+    const char *bind_ip;
+    const char *port_env;
+    int listen_port;
+
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd < 0) {
         perror("socket");
         return EXIT_FAILURE;
     }
 
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
+        perror("setsockopt SO_REUSEADDR");
+        close(sockfd);
+        return EXIT_FAILURE;
+    }
+
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    server_addr.sin_port = htons(DNS_PORT);
+    bind_ip = getenv("DNS_RELAY_BIND");
+    if (bind_ip != NULL && bind_ip[0] != '\0') {
+        if (inet_pton(AF_INET, bind_ip, &server_addr.sin_addr) != 1) {
+            fprintf(stderr, "invalid DNS_RELAY_BIND: %s\n", bind_ip);
+            close(sockfd);
+            return EXIT_FAILURE;
+        }
+    } else {
+        server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    }
+    port_env = getenv("DNS_RELAY_PORT");
+    listen_port = DNS_PORT;
+    if (port_env != NULL && port_env[0] != '\0') {
+        listen_port = atoi(port_env);
+        if (listen_port <= 0 || listen_port > 65535) {
+            fprintf(stderr, "invalid DNS_RELAY_PORT: %s\n", port_env);
+            close(sockfd);
+            return EXIT_FAILURE;
+        }
+    }
+    server_addr.sin_port = htons((uint16_t)listen_port);
 
     if (bind(sockfd, (const struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
         if (errno == EACCES) {
@@ -139,9 +169,15 @@ int main(void) {
 
     if (config_load("参考资料/dnsrelay.txt", &g_config) != 0) {
         fprintf(stderr, "warning: failed to load config, relay-only mode\n");
+    } else {
+        fprintf(stderr, "loaded %d config entries from 参考资料/dnsrelay.txt\n", g_config.count);
     }
 
-    printf("DNS relay server listening on 0.0.0.0:53 ...\n");
+    if (bind_ip != NULL && bind_ip[0] != '\0') {
+        printf("DNS relay server listening on %s:%d ...\n", bind_ip, listen_port);
+    } else {
+        printf("DNS relay server listening on 0.0.0.0:%d ...\n", listen_port);
+    }
 
     for (;;) {
         fd_set readfds;
