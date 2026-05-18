@@ -736,3 +736,83 @@ C:\projects\DNS-Relay-Server\
 ### DNS 域名指针压缩
 - 若某字节高 2 位为 `11`（即 `& 0xC0 == 0xC0`），则该字节与下一字节组成 16 位指针
 - 指针值 = `((byte0 & 0x3F) << 8) | byte1`，表示在报文中的绝对偏移量
+
+---
+
+## Phase 7：最终交付准备（文档 + 测试 + 打包）
+
+> **状态文件**：`C:\projects\DNS-Relay-Server\.cursor-status.txt`
+> **审查请求文件**：`C:\projects\DNS-Relay-Server\.cursor-review-request.txt`
+
+### 7.1 实验报告完善
+
+#### 7.1a 填写个人信息
+修改 `实验报告.md` 顶部表格：
+```
+| **姓名** | _（请填写）_  →  你的真实姓名
+| **学号** | _（请填写）_  →  你的学号
+| **班级** | _（请填写）_  →  你的班级
+```
+
+#### 7.1b 补测试截图
+用 `nslookup` 或 `dig` 实际运行程序，对以下用例截屏并粘贴到报告中对应位置：
+- 用例 1：`nslookup bupt 127.0.0.1` → 本地解析
+- 用例 3：`nslookup 008.cn 127.0.0.1` → 拦截 NXDOMAIN
+- 用例 4：`nslookup baidu.com 127.0.0.1` → 上游中继
+
+截图位置在 `实验报告.md` 的 4.3 节（三个 `（截图占位）` 处）。
+
+#### 7.1c 导出 PDF
+将 Markdown 报告导出为 PDF。推荐方案：
+```bash
+# 方案 A：Pandoc（需要 texlive 或 wkhtmltopdf）
+pandoc 实验报告.md -o 实验报告.pdf --pdf-engine=xelatex -V CJKmainfont="SimSun"
+
+# 方案 B：Typora / VS Code Markdown PDF 插件直接导出
+# 方案 C：转 Typst 后编译（更美观，但需要重新排版）
+```
+输出文件命名为 `实验报告.pdf`，放在项目根目录。
+
+### 7.2 确认编译 & 运行
+
+在 WSL2 中执行：
+```bash
+make clean && make
+sudo ./dnsrelay
+```
+确保程序正常监听 `0.0.0.0:53`。
+
+### 7.3 交付文件清单
+
+最终提交的文件：
+```
+实验报告.pdf           # 课程设计报告
+README.md              # 使用说明
+include/               # 头文件
+src/                   # 源代码
+Makefile               # 编译脚本
+参考资料/dnsrelay.txt  # 配置文件
+.gitignore
+```
+
+### 7.4 清理仓库
+
+确认以下不进入提交：
+- `dnsrelay.exe`（根目录的 0 字节占位文件 → 删除）
+- `build/` 目录（已在 .gitignore）
+- `dnsrelay` 可执行文件（已在 .gitignore）
+- `.cursor-review-request.txt` / `.cursor-status.txt`（本地追踪文件）
+
+### Phase 7 验证
+
+- [ ] 实验报告个人信息已填写
+- [ ] 测试截图已粘贴
+- [ ] PDF 已导出
+- [ ] `make clean && make` 通过
+- [ ] 仓库干净（无二进制文件残留）
+
+编译通过后，写状态文件并提交：
+```
+echo "7 | done | $(date +%Y-%m-%dT%H:%M:%S%z)" > .cursor-status.txt
+git add 实验报告.md 实验报告.pdf README.md && git commit -m "docs: 完善实验报告，补测试截图，导出 PDF"
+```

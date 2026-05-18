@@ -28,7 +28,16 @@ make clean && make
 sudo ./dnsrelay
 ```
 
-启动后加载 `参考资料/dnsrelay.txt`；加载失败则仅以中继模式运行。
+启动后加载 `参考资料/dnsrelay.txt`（208 条记录）；加载失败则仅以中继模式运行。
+
+**WSL 提示**：若 `bind: Address already in use`，可先 `sudo systemctl stop systemd-resolved`，或使用测试端口：
+
+```bash
+sudo DNS_RELAY_BIND=127.0.0.1 DNS_RELAY_PORT=5353 ./dnsrelay
+python3 scripts/dns_query.py 127.0.0.1 5353 bupt
+```
+
+正式验收与课程演示仍使用默认 **53 端口**（不设置 `DNS_RELAY_PORT`）。
 
 ## 测试
 
@@ -65,7 +74,11 @@ Makefile
 
 ```bash
 sudo sh scripts/test_dns.sh
+# 或
+python3 scripts/dns_query.py 127.0.0.1 5353 bupt 008.cn baidu.com
 ```
+
+输出保存至 `docs/test-output.txt`。
 
 ## 文档
 

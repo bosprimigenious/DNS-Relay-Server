@@ -1,5 +1,5 @@
 #!/bin/sh
-# DNS-Relay-Server 集成测试（需在 WSL/Linux 下以 root 绑定 53 端口）
+# DNS-Relay-Server 集成测试（WSL/Linux，root）
 set -e
 cd "$(dirname "$0")/.."
 
@@ -10,29 +10,29 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
+systemctl stop systemd-resolved 2>/dev/null || true
+export DNS_RELAY_BIND="${DNS_RELAY_BIND:-127.0.0.1}"
+export DNS_RELAY_PORT="${DNS_RELAY_PORT:-5353}"
+
 ./dnsrelay &
 PID=$!
 trap 'kill "$PID" 2>/dev/null || true' EXIT
-sleep 1
+sleep 2
 
-echo "========== 用例 1: bupt 本地解析 =========="
-nslookup bupt 127.0.0.1 2>&1 || true
-echo ""
+OUT=docs/test-output.txt
+mkdir -p docs
 
-echo "========== 用例 2: sina 本地解析 =========="
-nslookup sina 127.0.0.1 2>&1 || true
-echo ""
-
-echo "========== 用例 3: 008.cn 拦截 =========="
-nslookup 008.cn 127.0.0.1 2>&1 || true
-echo ""
-
-echo "========== 用例 4: baidu.com 中继 =========="
-nslookup baidu.com 127.0.0.1 2>&1 || true
-echo ""
-
-echo "========== 用例 5: MX 查询 bupt =========="
-nslookup -type=mx bupt 127.0.0.1 2>&1 || true
-echo ""
-
-echo "========== 测试完成 =========="
+{
+    echo "DNS_RELAY_BIND=$DNS_RELAY_BIND DNS_RELAY_PORT=$DNS_RELAY_PORT"
+    echo ""
+    python3 scripts/dns_query.py 127.0.0.1 "$DNS_RELAY_PORT" bupt 008.cn baidu.com
+    echo ""
+    echo "========== nslookup（若已安装 dnsutils）=========="
+    if command -v nslookup >/dev/null 2>&1; then
+        nslookup -port="$DNS_RELAY_PORT" bupt 127.0.0.1 2>&1 || true
+        nslookup -port="$DNS_RELAY_PORT" 008.cn 127.0.0.1 2>&1 || true
+        nslookup -port="$DNS_RELAY_PORT" baidu.com 127.0.0.1 2>&1 || true
+    else
+        echo "nslookup not installed"
+    fi
+} | tee "$OUT"

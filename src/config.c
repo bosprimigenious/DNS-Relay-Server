@@ -21,7 +21,8 @@ int config_load(const char *path, config_t *cfg) {
     while (fgets(line, sizeof(line), fp) != NULL) {
         config_entry_t *entry;
 
-        if (line[0] == '\n' || line[0] == '#' || line[0] == '\0') {
+        line[strcspn(line, "\r\n")] = '\0';
+        if (line[0] == '\0' || line[0] == '#') {
             continue;
         }
 
