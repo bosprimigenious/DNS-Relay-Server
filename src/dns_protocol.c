@@ -2,16 +2,26 @@
 
 #include <string.h>
 
+static int dns_pos_valid(int pos) {
+    return pos >= 0 && pos < DNS_MAX_MESSAGE;
+}
+
 int dns_name_skip(const unsigned char *packet, int *offset) {
     int label_len;
 
     for (;;) {
+        if (!dns_pos_valid(*offset)) {
+            return -1;
+        }
         label_len = packet[*offset];
         if (label_len == 0) {
             *offset += 1;
             return 0;
         }
         if ((label_len & 0xC0) == 0xC0) {
+            if (!dns_pos_valid(*offset + 1)) {
+                return -1;
+            }
             *offset += 2;
             return 0;
         }
@@ -48,9 +58,15 @@ int dns_name_decode(const unsigned char *packet, int *offset,
                 jumped = 1;
             }
             pos = (int)ptr;
+            if (!dns_pos_valid(pos)) {
+                return -1;
+            }
             continue;
         }
 
+        if (!dns_pos_valid(pos)) {
+            return -1;
+        }
         label_len = packet[pos];
         if (label_len == 0) {
             if (!jumped) {
@@ -67,6 +83,9 @@ int dns_name_decode(const unsigned char *packet, int *offset,
             return -1;
         }
         pos++;
+        if (pos + label_len > DNS_MAX_MESSAGE) {
+            return -1;
+        }
         if (out_len + label_len + 1 >= buf_size) {
             return -1;
         }
