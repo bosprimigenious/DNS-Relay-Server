@@ -61,6 +61,16 @@ Makefile
 实验报告.md       # 课程设计报告（导出 PDF 后提交）
 ```
 
+## 集成测试
+
+```bash
+sudo sh scripts/test_dns.sh
+```
+
 ## 文档
 
-详细实验报告见 [实验报告.md](./实验报告.md)。
+详细实验报告见 [实验报告.md](./实验报告.md)。提交前导出 `实验报告.pdf`（Typora / VS Code Markdown PDF 插件 / Pandoc）。
+
+## 交付清单
+
+`实验报告.pdf`、`README.md`、`include/`、`src/`、`Makefile`、`参考资料/dnsrelay.txt`、`.gitignore`
