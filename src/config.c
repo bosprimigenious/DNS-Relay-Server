@@ -31,11 +31,11 @@ int config_load(const char *path, config_t *cfg) {
 
         entry = &cfg->entries[cfg->count];
         if (inet_pton(AF_INET, ip_str, &entry->ip) != 1) {
+            fprintf(stderr, "config: skip invalid IP on line: %s", line);
             continue;
         }
 
-        strncpy(entry->domain, domain, sizeof(entry->domain) - 1);
-        entry->domain[sizeof(entry->domain) - 1] = '\0';
+        snprintf(entry->domain, sizeof(entry->domain), "%s", domain);
         cfg->count++;
 
         if (cfg->count >= CONFIG_MAX_ENTRIES) {
