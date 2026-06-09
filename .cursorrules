@@ -80,6 +80,22 @@
   git commit -m "chore: 添加 .cursor-status.txt 状态追踪"
   ```
 
+### 10. 实验报告质量标准（强制）
+- 报告为 Typst 格式（`实验报告.typ`），排版优先于 Markdown
+- **严禁 ASCII art 框图**：系统架构图、流程图、数据结构图必须用 **SVG** 矢量图绘制
+- SVG 文件存放于 `diagrams/` 目录，在 Typst 中通过 `#figure(image("diagrams/xxx.svg"), caption: [...])` 插入
+- SVG 要求：中文标注、线条清晰、配色专业（蓝/灰/黑为主）、字号统一
+- Typst 编译命令：`typst compile 实验报告.typ 实验报告.pdf`，零错误
+- 编译后验证 PDF 可读：SVG 图片清晰、表格对齐、页码连续、目录超链接可用
+
+### 11. Typst 报告排版强制约束
+- 必须声明中文字体：`#set text(font: ("SimSun", "SimHei"), size: 12pt, lang: "zh")`
+- 封面包含：课题名称、姓名、学号、班级、日期、学校全称
+- 章节目录自动生成：`#outline(depth: 2)`
+- 代码块使用 `#figure(text(font: "Consolas", size: 9pt)[...]], caption: [...])`
+- 表格使用 `#figure(table(...), caption: [...])`
+- 参考文献按学术规范列出（RFC + 教材 + 网络编程经典）
+
 ### 任务交付守护进程（Crucial）
 当你（Cursor）判定当前 Phase 的 TODO 已全部 Done 时，你必须立即且仅执行以下两个步骤：
 1. 向文件 `C:\projects\DNS-Relay-Server\.cursor-status.txt` 覆盖写入当前状态（包含 Phase、Status、Time）。
