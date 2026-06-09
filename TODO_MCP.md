@@ -816,3 +816,142 @@ Makefile               # 编译脚本
 echo "7 | done | $(date +%Y-%m-%dT%H:%M:%S%z)" > .cursor-status.txt
 git add 实验报告.md 实验报告.pdf README.md && git commit -m "docs: 完善实验报告，补测试截图，导出 PDF"
 ```
+
+---
+
+## Phase 8：报告视觉增强（SVG 矢量图 + Typst 编译）
+
+> **说明**：当前 `实验报告.typ` 使用 ASCII art 字符画表示系统架构图和流程图，视觉效果不符合课程设计交付标准。本 Phase 将所有框图替换为专业 SVG 矢量图。
+
+**开始前**，追加状态：
+```
+echo "8 | in_progress | $(date +%Y-%m-%dT%H:%M:%S%z)" > .cursor-status.txt
+```
+
+### 8.1 创建 `diagrams/` 目录
+
+```bash
+mkdir -p C:/projects/DNS-Relay-Server/diagrams
+```
+
+### 8.2 绘制系统架构 SVG
+
+创建 `C:\projects\DNS-Relay-Server\diagrams\architecture.svg`：
+
+**设计要求**：
+- 从左到右：客户端 → DNS-Relay-Server（中间大框）→ 上游 DNS 114.114.114.114
+- DNS-Relay-Server 内部展示三个分支：拦截(NXDOMAIN)、本地解析(A记录)、上游中继
+- 使用圆角矩形、箭头连接、中文标注
+- 配色：主色调 #2563EB（蓝），背景 #F8FAFC，边框 #94A3B8
+
+**SVG 尺寸**：800×400
+
+### 8.3 绘制主循环流程 SVG
+
+创建 `C:\projects\DNS-Relay-Server\diagrams\flowchart.svg`：
+
+**设计要求**：
+- 从上到下展示 `select()` → `recvfrom` → `dns_parse_query` → `config_lookup` → 三条分支
+- 三条分支分别对应：NXDOMAIN、A记录/空NOERROR、relay_to_upstream（成功/SERVFAIL）
+- 使用菱形表示判断节点，矩形表示处理节点
+- 配色统一：判断节点 #F59E0B（黄），处理节点 #3B82F6（蓝），错误节点 #EF4444（红）
+
+**SVG 尺寸**：700×700
+
+### 8.4 绘制 DNS 报文结构 SVG
+
+创建 `C:\projects\DNS-Relay-Server\diagrams\dnspacket.svg`：
+
+**设计要求**：
+- 展示 DNS Header（12字节）各字段布局：ID、FLAGS（QR/OPCODE/AA/TC/RD/RA/Z/RCODE）、QDCOUNT、ANCOUNT、NSCOUNT、ARCOUNT
+- 展示 Question Section 和 Answer RR Section 结构
+- 标注各字段位宽（bit 数）
+- 颜色区分 Header / Question / Answer 三部分
+
+**SVG 尺寸**：800×500
+
+### 8.5 修改 `实验报告.typ` 替换 ASCII art
+
+#### 8.5a 系统架构图（第 2.1 节）
+
+找到：
+```
+#figure(
+  text(size: 9pt, font: "Consolas")[
+    ```
+                        ┌─────────────────────────────────────┐
+                        │         DNS-Relay-Server            │
+      客户端 ──UDP:53──►│  main.c (select 主循环)              │
+    ...
+```
+替换为：
+```typst
+#figure(
+  image("diagrams/architecture.svg", width: 100%),
+  caption: [DNS 中继服务器系统架构],
+)
+```
+
+#### 8.5b 主循环流程图（第 2.3 节）
+
+找到 ASCII art 流程图，替换为：
+```typst
+#figure(
+  image("diagrams/flowchart.svg", width: 100%),
+  caption: [主循环处理流程],
+)
+```
+
+#### 8.5c 新增 DNS 报文结构图（第 3.1 节末尾）
+
+在 "== DNS 报文与字节序" 节末尾追加：
+```typst
+#figure(
+  image("diagrams/dnspacket.svg", width: 100%),
+  caption: [DNS 报文结构（Header + Question + Resource Record）],
+)
+```
+
+### 8.6 编译 Typst → PDF
+
+```bash
+cd C:/projects/DNS-Relay-Server
+typst compile 实验报告.typ 实验报告.pdf
+```
+
+**要求**：零错误，PDF 中 SVG 图片清晰可读。
+
+### 8.7 验证检查清单
+
+- [ ] 三个 SVG 文件创建成功，内容完整
+- [ ] Typst 中 ASCII art 全部替换为 `#image()` 引用
+- [ ] `typst compile` 通过，无错误
+- [ ] PDF 中所有 SVG 正常渲染、表格对齐、页码连续
+- [ ] 目录超链接可点击跳转
+
+### Phase 8 验证
+
+```bash
+cd C:/projects/DNS-Relay-Server
+typst compile 实验报告.typ 实验报告.pdf
+```
+
+编译通过后，写状态文件和审查请求文件并提交：
+```
+echo "8 | done | $(date +%Y-%m-%dT%H:%M:%S%z)" > .cursor-status.txt
+echo "Phase=8 | Status=done | Files=diagrams/architecture.svg,diagrams/flowchart.svg,diagrams/dnspacket.svg,实验报告.typ,实验报告.pdf | Time=$(date +%Y-%m-%dT%H:%M:%S%z)" > .cursor-review-request.txt
+git add diagrams/ 实验报告.typ 实验报告.pdf && git commit -m "docs: 替换 ASCII 框图为 SVG 矢量图，Typst 重编译 PDF"
+```
+
+### Push 检查（Phase 8 完成后执行）
+```bash
+LAST_PUSH=$(git log --format="%at" origin/main -1 2>/dev/null || echo 0)
+NOW=$(date +%s)
+ELAPSED=$(( (NOW - LAST_PUSH) / 3600 ))
+if [ $ELAPSED -ge 3 ] || [ "$LAST_PUSH" = "0" ]; then
+    git push origin main
+    echo "已推送到远程（距上次 push ${ELAPSED} 小时）"
+else
+    echo "距上次推送仅 ${ELAPSED} 小时，暂不 push"
+fi
+```
