@@ -72,13 +72,32 @@ Makefile
 
 ## 集成测试
 
+**Linux / WSL 终端内：**
+
 ```bash
+cd /mnt/c/projects/DNS-Relay-Server   # 或你的克隆路径
+bash scripts/run_verification.sh
 sudo sh scripts/test_dns.sh
-# 或
 python3 scripts/dns_query.py 127.0.0.1 5353 bupt 008.cn baidu.com
 ```
 
-输出保存至 `docs/test-output.txt`。
+**Windows PowerShell（项目已在 `C:\projects\DNS-Relay-Server`）：**
+
+```powershell
+# 不要用 cd /mnt/c/... —— 那是 WSL 路径，PowerShell 无法识别
+.\scripts\run_verification.ps1
+# 或一行：
+wsl bash -c "cd /mnt/c/projects/DNS-Relay-Server && bash scripts/run_verification.sh"
+```
+
+输出保存至 `docs/verification/` 与 `docs/test-output.txt`。
+
+生成报告用终端截图：
+
+```bash
+python3 scripts/gen_terminal_screenshots.py   # → docs/screenshots/terminal-*.png
+typst compile 实验报告.typ 实验报告.pdf
+```
 
 ## 文档
 
