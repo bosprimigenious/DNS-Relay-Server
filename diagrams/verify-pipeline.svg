@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="160" viewBox="0 0 720 160">
+  <rect width="720" height="160" fill="#F8FAFC"/>
+  <text x="360" y="26" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="bold" fill="#1E3A8A">自动化验证与截图流水线</text>
+  <rect x="16" y="48" width="118" height="56" rx="8" fill="#2563EB"/>
+  <text x="71" y="78" text-anchor="middle" font-family="Consolas, monospace" font-size="9" fill="#FFFFFF">run_verification.sh</text>
+  <rect x="138" y="48" width="118" height="56" rx="8" fill="#FFFFFF" stroke="#94A3B8" stroke-width="2"/>
+  <text x="199" y="78" text-anchor="middle" font-family="Consolas, monospace" font-size="9" fill="#334155">verification.log</text>
+  <rect x="280" y="48" width="118" height="56" rx="8" fill="#FFFFFF" stroke="#94A3B8" stroke-width="2"/>
+  <text x="339" y="78" text-anchor="middle" font-family="Consolas, monospace" font-size="9" fill="#334155">gen_terminal_</text>
+  <text x="339" y="90" text-anchor="middle" font-family="Consolas, monospace" font-size="9" fill="#334155">screenshots.py</text>
+  <rect x="422" y="48" width="118" height="56" rx="8" fill="#0c0c0c" stroke="#475569"/>
+  <text x="479" y="78" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#4ec9b0">14 PNG</text>
+  <rect x="564" y="48" width="118" height="56" rx="8" fill="#EFF6FF" stroke="#3B82F6" stroke-width="2"/>
+  <text x="623" y="78" text-anchor="middle" font-family="Consolas, monospace" font-size="10" fill="#1D4ED8">typst PDF</text>
+  <text x="360" y="132" text-anchor="middle" font-family="Consolas, monospace" font-size="10" fill="#64748B">verify_and_screenshot.ps1</text>
+</svg>

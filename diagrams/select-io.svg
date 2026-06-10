@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="200" viewBox="0 0 640 200">
+  <rect width="640" height="200" fill="#F8FAFC"/>
+  <text x="320" y="26" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="bold" fill="#1E3A8A">select 事件驱动 I/O</text>
+  <rect x="40" y="52" width="100" height="44" rx="8" fill="#2563EB"/>
+  <text x="90" y="78" text-anchor="middle" font-family="Consolas, monospace" font-size="11" fill="#FFFFFF">select 10ms</text>
+  <rect x="300" y="52" width="90" height="44" rx="8" fill="#EFF6FF" stroke="#3B82F6"/>
+  <text x="345" y="78" text-anchor="middle" font-family="Consolas, monospace" font-size="10" fill="#1D4ED8">continue</text>
+  <rect x="430" y="52" width="100" height="44" rx="8" fill="#FFFFFF" stroke="#3B82F6" stroke-width="2"/>
+  <text x="480" y="78" text-anchor="middle" font-family="Consolas, monospace" font-size="11" fill="#1E40AF">recvfrom</text>
+  <rect x="540" y="52" width="90" height="44" rx="8" fill="#DCFCE7" stroke="#22C55E"/>
+  <text x="585" y="78" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#15803D">sendto</text>
+  <text x="320" y="158" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#334155">超时 continue 省 CPU；有数据则收包处理并回到 select</text>
+</svg>
