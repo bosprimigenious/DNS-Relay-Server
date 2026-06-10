@@ -1,0 +1,26 @@
+Screenshot 12: dnsperf stress
+============================================================
+dnsperf stress (~600k queries, sync relay bottleneck)
+WSL: cd /mnt/c/projects/DNS-Relay-Server && bash scripts/run_dnsperf.sh stress
+Starting dnsrelay on 127.0.0.1:15353 ...
+========== dnsperf ==========
+[Timeout] Query timed out: msg id 27
+[Timeout] Query timed out: msg id 28
+... (timeout lines omitted) ...
+
+Statistics:
+
+  Queries sent:         6270
+  Queries completed:    881 (14.05%)
+  Queries lost:         5389 (85.95%)
+
+  Response codes:       NOERROR 876 (99.43%), SERVFAIL 5 (0.57%)
+  Average packet size:  request 23, response 49
+  Run time (s):         64.164336
+  Queries per second:   13.730369
+
+  Average Latency (s):  3.768282 (min 0.056098, max 4.976898)
+  Latency StdDev (s):   0.866278
+
+============================
+[Status] Testing complete

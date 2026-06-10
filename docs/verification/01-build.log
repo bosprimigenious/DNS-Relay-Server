@@ -1,0 +1,9 @@
+Screenshot 1: build make clean && make
+$ make clean && make
+rm -rf build dnsrelay
+mkdir -p build
+gcc -Wall -Wextra -g -std=c11 -Iinclude -c src/config.c -o build/config.o
+gcc -Wall -Wextra -g -std=c11 -Iinclude -c src/dns_protocol.c -o build/dns_protocol.o
+gcc -Wall -Wextra -g -std=c11 -Iinclude -c src/id_map.c -o build/id_map.o
+gcc -Wall -Wextra -g -std=c11 -Iinclude -c src/main.c -o build/main.o
+gcc -Wall -Wextra -g -std=c11 -Iinclude -o dnsrelay build/config.o build/dns_protocol.o build/id_map.o build/main.o

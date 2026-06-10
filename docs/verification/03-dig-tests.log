@@ -1,0 +1,80 @@
+========== 3. dig tests ==========
+;; communications error to 127.0.0.1#5353: timed out
+;; communications error to 127.0.0.1#5353: timed out
+;; communications error to 127.0.0.1#5353: timed out
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.5-Ubuntu <<>> @127.0.0.1 -p 5353 bupt A +short
+; (1 server found)
+;; global options: +cmd
+;; no servers could be reached
+---
+;; communications error to 127.0.0.1#5353: timed out
+;; communications error to 127.0.0.1#5353: timed out
+;; communications error to 127.0.0.1#5353: timed out
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.5-Ubuntu <<>> @127.0.0.1 -p 5353 sina A +short
+; (1 server found)
+;; global options: +cmd
+;; no servers could be reached
+---
+;; communications error to 127.0.0.1#5353: timed out
+;; communications error to 127.0.0.1#5353: timed out
+;; communications error to 127.0.0.1#5353: timed out
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.5-Ubuntu <<>> @127.0.0.1 -p 5353 008.cn A
+; (1 server found)
+;; global options: +cmd
+;; no servers could be reached
+---
+;; communications error to 127.0.0.1#5353: timed out
+;; communications error to 127.0.0.1#5353: timed out
+;; communications error to 127.0.0.1#5353: timed out
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.5-Ubuntu <<>> @127.0.0.1 -p 5353 test1 A +short
+; (1 server found)
+;; global options: +cmd
+;; no servers could be reached
+---
+;; communications error to 127.0.0.1#5353: timed out
+;; communications error to 127.0.0.1#5353: timed out
+;; communications error to 127.0.0.1#5353: timed out
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.5-Ubuntu <<>> @127.0.0.1 -p 5353 test0 A
+; (1 server found)
+;; global options: +cmd
+;; no servers could be reached
+---
+;; communications error to 127.0.0.1#5353: timed out
+;; communications error to 127.0.0.1#5353: timed out
+;; communications error to 127.0.0.1#5353: timed out
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.5-Ubuntu <<>> @127.0.0.1 -p 5353 baidu.com A +short
+; (1 server found)
+;; global options: +cmd
+;; no servers could be reached
+
+========== 4. fix-A bupt MX ==========
+;; communications error to 127.0.0.1#5353: timed out
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.5-Ubuntu <<>> @127.0.0.1 -p 5353 bupt MX
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 9254
+;; flags: qr rd ad; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 0
+;; WARNING: recursion requested but not available
+;; WARNING: Message has 23 extra bytes at end
+
+;; QUESTION SECTION:
+;bupt.                IN    MX
+
+;; Query time: 0 msec
+;; SERVER: 127.0.0.1#5353(127.0.0.1) (UDP)
+;; WHEN: Wed Jun 10 21:41:00 CST 2026
+;; MSG SIZE  rcvd: 45
+
+
+========== python3 A query ==========
+qname=bupt id=0x1234 rcode=0 ancount=1 len=38
+
+========== python3 MX query ==========

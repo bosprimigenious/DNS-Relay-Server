@@ -1,0 +1,145 @@
+Screenshot 2: server startup (stderr + stdout)
+$ DNS_RELAY_BIND=127.0.0.1 DNS_RELAY_PORT=15353 ./dnsrelay
+--- stderr (config load) ---
+--- stdout (listen) ---
+
+Screenshot 3: course case1 nslookup bupt local A
+$ nslookup -port=15353 bupt 127.0.0.1
+Server:        127.0.0.1
+Address:    127.0.0.1#15353
+
+Non-authoritative answer:
+Name:    bupt
+Address: 123.127.134.10
+
+
+Screenshot 4: course case2 nslookup 008.cn block NXDOMAIN
+$ nslookup -port=15353 008.cn 127.0.0.1
+Server:        127.0.0.1
+Address:    127.0.0.1#15353
+
+** server can't find 008.cn: NXDOMAIN
+
+
+Screenshot 5: course case3 nslookup baidu.com upstream relay
+$ nslookup -port=15353 baidu.com 127.0.0.1
+Server:        127.0.0.1
+Address:    127.0.0.1#15353
+
+Non-authoritative answer:
+Name:    baidu.com
+Address: 111.63.65.103
+Name:    baidu.com
+Address: 111.63.65.247
+Name:    baidu.com
+Address: 124.237.177.164
+Name:    baidu.com
+Address: 110.242.74.102
+
+
+Screenshot 6: config test0 block (0.0.0.0 test0)
+$ nslookup -port=15353 test0 127.0.0.1
+Server:        127.0.0.1
+Address:    127.0.0.1#15353
+
+** server can't find test0: NXDOMAIN
+
+
+Screenshot 7: config test1 local (11.111.11.111 test1)
+$ nslookup -port=15353 test1 127.0.0.1
+Server:        127.0.0.1
+Address:    127.0.0.1#15353
+
+Non-authoritative answer:
+Name:    test1
+Address: 11.111.11.111
+
+
+Screenshot 8: nslookup sina second local record
+$ nslookup -port=15353 sina 127.0.0.1
+Server:        127.0.0.1
+Address:    127.0.0.1#15353
+
+Non-authoritative answer:
+Name:    sina
+Address: 202.108.33.89
+
+
+Screenshot 9: fix-A nslookup mx bupt empty NOERROR
+$ nslookup -port=15353 -type=mx bupt 127.0.0.1
+Server:        127.0.0.1
+Address:    127.0.0.1#15353
+
+Non-authoritative answer:
+*** Can't find bupt: No answer
+
+Authoritative answers can be found from:
+
+
+Screenshot 10: dns_query.py protocol check
+$ python3 scripts/dns_query.py 127.0.0.1 15353 bupt 008.cn baidu.com test0 test1
+qname=bupt id=0x1234 rcode=0 ancount=1 len=38
+qname=008.cn id=0x1234 rcode=3 ancount=0 len=24
+qname=baidu.com id=0x1234 rcode=0 ancount=4 len=91
+qname=test0 id=0x1234 rcode=3 ancount=0 len=23
+qname=test1 id=0x1234 rcode=0 ancount=1 len=39
+
+Screenshot 11: dig bupt A +noall +answer +comments
+$ dig @127.0.0.1 -p 15353 bupt A +noall +answer +comments
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 51827
+;; flags: qr rd ad; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+;; WARNING: recursion requested but not available
+
+;; ANSWER SECTION:
+bupt.            300    IN    A    123.127.134.10
+
+
+Screenshot 12: dig 008.cn A +noall +answer +comments
+$ dig @127.0.0.1 -p 15353 008.cn A +noall +answer +comments
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 25959
+;; flags: qr rd ad; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 0
+;; WARNING: recursion requested but not available
+;; WARNING: Message has 23 extra bytes at end
+
+
+Screenshot 13: dig baidu.com A +noall +answer +comments
+$ dig @127.0.0.1 -p 15353 baidu.com A +noall +answer +comments
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 31981
+;; flags: qr rd ra; QUERY: 1, ANSWER: 4, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+; COOKIE: 22802754f2dce8f8010000006a2976d8a04e863334a1ff8b (good)
+;; ANSWER SECTION:
+baidu.com.        568    IN    A    111.63.65.103
+baidu.com.        568    IN    A    111.63.65.247
+baidu.com.        568    IN    A    124.237.177.164
+baidu.com.        568    IN    A    110.242.74.102
+
+
+Screenshot 14: fix-B SERVFAIL (iptables block 114.114.114.114)
+$ sudo iptables -A OUTPUT -d 114.114.114.114 -j DROP
+$ dig @127.0.0.1 -p 15353 not-in-config-xyz123.com A +time=5 +comments
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.5-Ubuntu <<>> @127.0.0.1 -p 15353 not-in-config-xyz123.com A +time=5 +comments
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: SERVFAIL, id: 48727
+;; flags: qr rd ad; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 0
+;; WARNING: recursion requested but not available
+;; WARNING: Message has 23 extra bytes at end
+
+;; QUESTION SECTION:
+;not-in-config-xyz123.com.    IN    A
+
+;; Query time: 0 msec
+;; SERVER: 127.0.0.1#15353(127.0.0.1) (UDP)
+;; WHEN: Wed Jun 10 22:38:16 CST 2026
+;; MSG SIZE  rcvd: 65
+
+(iptables rule removed)
+
