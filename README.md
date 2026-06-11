@@ -2,7 +2,7 @@
 
 北京邮电大学（BUPT）计算机网络课程设计 —— **DNS 中继服务器**
 
-> **分支**：`main` 为**同步上游中继**（课设默认交付）；**异步**实现见 `relay-async`。详见 [docs/BRANCHES.md](docs/BRANCHES.md)。
+> **分支**：当前为 **`relay-sync`**（同步上游中继 · **课设交付线**）。默认主分支与导航见 **`main`**；异步见 [`relay-async`](https://github.com/bosprimigenious/DNS-Relay-Server/tree/relay-async)。详见 [docs/BRANCHES.md](docs/BRANCHES.md)。
 
 基于 RFC 1035 实现 UDP DNS 中继：支持本地拦截、本地解析、上游转发与 **TTL 缓存**，主循环使用 `select()` 事件驱动（10ms 超时），上游中继为**同步**模型（临时 socket + 3s 超时）。
 
