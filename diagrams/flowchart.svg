@@ -1,71 +1,188 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="700" height="700" viewBox="0 0 700 700">
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1165" viewBox="0 0 680 880">
   <defs>
     <marker id="arr" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
       <path d="M0,0 L10,4 L0,8 Z" fill="#475569"/>
     </marker>
+    <marker id="arr-blue" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#2563EB"/>
+    </marker>
+    <filter id="sh" x="-4%" y="-4%" width="108%" height="108%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#94A3B8" flood-opacity="0.28"/>
+    </filter>
   </defs>
-  <rect width="700" height="700" fill="#F8FAFC"/>
-  <rect x="250" y="20" width="200" height="40" rx="8" fill="#3B82F6" stroke="#1D4ED8" stroke-width="1.5"/>
-  <text x="350" y="46" text-anchor="middle" font-family="Consolas, monospace" font-size="12" fill="#FFFFFF">select(10ms 超时)</text>
-  <polygon points="120,100 200,130 120,160" fill="#F59E0B" stroke="#D97706" stroke-width="1.5"/>
-  <text x="160" y="135" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="12" fill="#1E293B">超时?</text>
-  <rect x="40" y="175" width="120" height="36" rx="6" fill="#3B82F6" stroke="#1D4ED8"/>
-  <text x="100" y="198" text-anchor="middle" font-family="Consolas, monospace" font-size="11" fill="#FFFFFF">continue</text>
-  <line x1="350" y1="60" x2="200" y2="100" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
-  <text x="260" y="88" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="11" fill="#1E293B">是</text>
-  <line x1="160" y1="160" x2="100" y2="175" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
-  <polygon points="480,100 560,130 480,160" fill="#F59E0B" stroke="#D97706" stroke-width="1.5"/>
-  <text x="520" y="135" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="12" fill="#1E293B">可读?</text>
-  <line x1="350" y1="60" x2="520" y2="100" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
-  <text x="430" y="88" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="11" fill="#1E293B">否</text>
-  <rect x="460" y="175" width="120" height="36" rx="6" fill="#3B82F6" stroke="#1D4ED8"/>
-  <text x="520" y="198" text-anchor="middle" font-family="Consolas, monospace" font-size="11" fill="#FFFFFF">recvfrom</text>
-  <line x1="520" y1="160" x2="520" y2="175" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
-  <polygon points="460,235 560,265 460,295" fill="#F59E0B" stroke="#D97706" stroke-width="1.5"/>
-  <text x="510" y="262" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="11" fill="#1E293B">len≥12?</text>
-  <line x1="520" y1="211" x2="510" y2="235" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
-  <rect x="600" y="248" width="80" height="34" rx="6" fill="#64748B" stroke="#475569"/>
-  <text x="640" y="270" text-anchor="middle" font-family="Consolas, monospace" font-size="10" fill="#FFFFFF">丢弃</text>
-  <line x1="560" y1="265" x2="600" y2="265" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
-  <text x="578" y="258" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="10" fill="#1E293B">否</text>
-  <polygon points="460,320 560,350 460,380" fill="#F59E0B" stroke="#D97706" stroke-width="1.5"/>
-  <text x="510" y="352" text-anchor="middle" font-family="Consolas, monospace" font-size="10" fill="#1E293B">dns_parse_query</text>
-  <text x="510" y="368" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="10" fill="#1E293B">成功?</text>
-  <line x1="510" y1="295" x2="510" y2="320" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
-  <rect x="40" y="335" width="110" height="34" rx="6" fill="#EF4444" stroke="#B91C1C"/>
-  <text x="95" y="357" text-anchor="middle" font-family="Consolas, monospace" font-size="10" fill="#FFFFFF">FORMERR</text>
-  <line x1="460" y1="350" x2="150" y2="352" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
-  <text x="300" y="342" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="10" fill="#1E293B">否</text>
-  <rect x="430" y="400" width="160" height="36" rx="6" fill="#3B82F6" stroke="#1D4ED8"/>
-  <text x="510" y="423" text-anchor="middle" font-family="Consolas, monospace" font-size="11" fill="#FFFFFF">config_lookup(qname)</text>
-  <line x1="510" y1="380" x2="510" y2="400" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
-  <rect x="60" y="470" width="100" height="44" rx="8" fill="#EF4444" stroke="#B91C1C"/>
-  <text x="110" y="490" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="11" fill="#FFFFFF">0.0.0.0</text>
-  <text x="110" y="506" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="10" fill="#FFFFFF">NXDOMAIN</text>
-  <rect x="300" y="460" width="100" height="54" rx="8" fill="#3B82F6" stroke="#1D4ED8"/>
-  <text x="350" y="482" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="11" fill="#FFFFFF">非零 IPv4</text>
-  <polygon points="300,530 350,555 400,530 350,505" fill="#F59E0B" stroke="#D97706"/>
-  <text x="350" y="535" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="10" fill="#1E293B">QTYPE=A?</text>
-  <rect x="270" y="570" width="80" height="34" rx="6" fill="#3B82F6" stroke="#1D4ED8"/>
-  <text x="310" y="592" text-anchor="middle" font-family="Consolas, monospace" font-size="10" fill="#FFFFFF">A 记录</text>
-  <rect x="370" y="570" width="100" height="34" rx="6" fill="#3B82F6" stroke="#1D4ED8"/>
-  <text x="420" y="592" text-anchor="middle" font-family="Consolas, monospace" font-size="10" fill="#FFFFFF">空 NOERROR</text>
-  <line x1="330" y1="555" x2="310" y2="570" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="370" y1="555" x2="420" y2="570" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
-  <rect x="540" y="470" width="120" height="44" rx="8" fill="#3B82F6" stroke="#1D4ED8"/>
-  <text x="600" y="498" text-anchor="middle" font-family="Consolas, monospace" font-size="10" fill="#FFFFFF">relay_to_upstream()</text>
-  <polygon points="540,540 600,570 660,540 600,510" fill="#F59E0B" stroke="#D97706"/>
-  <text x="600" y="545" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="10" fill="#1E293B">成功?</text>
-  <rect x="540" y="590" width="70" height="32" rx="6" fill="#3B82F6" stroke="#1D4ED8"/>
-  <text x="575" y="611" text-anchor="middle" font-family="Consolas, monospace" font-size="9" fill="#FFFFFF">中继完成</text>
-  <rect x="630" y="590" width="70" height="32" rx="6" fill="#EF4444" stroke="#B91C1C"/>
-  <text x="665" y="611" text-anchor="middle" font-family="Consolas, monospace" font-size="9" fill="#FFFFFF">SERVFAIL</text>
-  <line x1="575" y1="570" x2="575" y2="590" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="625" y1="570" x2="665" y2="590" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="510" y1="436" x2="110" y2="470" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="510" y1="436" x2="350" y2="460" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="510" y1="436" x2="600" y2="470" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="350" y1="514" x2="350" y2="530" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="600" y1="514" x2="600" y2="540" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect width="680" height="880" fill="#F8FAFC"/>
+
+  <!-- title -->
+  <text x="340" y="32" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="17" font-weight="bold" fill="#1E3A8A">主循环处理流程</text>
+  <text x="340" y="50" text-anchor="middle" font-family="Consolas, monospace" font-size="11" fill="#64748B">main.c · for(;;) { ... }</text>
+  <line x1="140" y1="58" x2="540" y2="58" stroke="#3B82F6" stroke-width="2"/>
+
+  <!-- loop rail -->
+  <path d="M 48 72 L 48 820" stroke="#CBD5E1" stroke-width="2" stroke-dasharray="6 4" fill="none"/>
+  <text x="48" y="844" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="11" fill="#64748B">下一轮</text>
+
+  <!-- 1 select -->
+  <g filter="url(#sh)">
+    <rect x="220" y="72" width="240" height="44" rx="10" fill="#2563EB" stroke="#1D4ED8" stroke-width="1.5"/>
+    <text x="340" y="100" text-anchor="middle" font-family="Consolas, monospace" font-size="14" fill="#FFFFFF">select(10ms 超时)</text>
+  </g>
+  <line x1="340" y1="124" x2="340" y2="142" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- 2 timeout -->
+  <polygon points="340,142 420,172 340,202 260,172" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="340" y="170" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="13" fill="#1E293B">超时？</text>
+  <text x="340" y="186" text-anchor="middle" font-family="Consolas, monospace" font-size="10" fill="#92400E">ready == 0</text>
+
+  <!-- yes timeout -> continue -->
+  <path d="M 260 172 L 120 172 L 120 108" stroke="#94A3B8" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+  <text x="200" y="164" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="12" fill="#64748B">是</text>
+  <g filter="url(#sh)">
+    <rect x="60" y="148" width="100" height="36" rx="8" fill="#EFF6FF" stroke="#3B82F6" stroke-width="1.5"/>
+    <text x="110" y="171" text-anchor="middle" font-family="Consolas, monospace" font-size="12" fill="#1D4ED8">continue</text>
+  </g>
+  <path d="M 110 148 L 110 94 L 220 94" stroke="#2563EB" stroke-width="1.8" fill="none" marker-end="url(#arr-blue)"/>
+
+  <!-- no timeout -> readable -->
+  <line x1="340" y1="202" x2="340" y2="220" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="358" y="216" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="12" fill="#64748B">否</text>
+
+  <polygon points="340,220 420,250 340,280 260,250" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="340" y="252" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="13" fill="#1E293B">可读？</text>
+  <text x="340" y="266" text-anchor="middle" font-family="Consolas, monospace" font-size="10" fill="#92400E">FD_ISSET</text>
+
+  <!-- no readable -> continue -->
+  <path d="M 260 250 L 48 250" stroke="#94A3B8" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+  <text x="220" y="242" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="12" fill="#64748B">否</text>
+
+  <line x1="340" y1="280" x2="340" y2="298" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="358" y="294" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="12" fill="#64748B">是</text>
+
+  <!-- recvfrom -->
+  <g filter="url(#sh)">
+    <rect x="230" y="298" width="220" height="40" rx="8" fill="#FFFFFF" stroke="#3B82F6" stroke-width="1.5"/>
+    <text x="340" y="323" text-anchor="middle" font-family="Consolas, monospace" font-size="13" fill="#1E40AF">recvfrom()</text>
+  </g>
+  <line x1="340" y1="342" x2="340" y2="360" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- len -->
+  <polygon points="340,360 420,390 340,420 260,390" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="340" y="388" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="13" fill="#1E293B">len ≥ 12？</text>
+
+  <path d="M 260 390 L 48 390" stroke="#94A3B8" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+  <text x="195" y="382" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="12" fill="#64748B">否 · 丢弃</text>
+
+  <line x1="340" y1="420" x2="340" y2="438" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="358" y="434" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="12" fill="#64748B">是</text>
+
+  <!-- parse -->
+  <g filter="url(#sh)">
+    <rect x="195" y="438" width="290" height="40" rx="8" fill="#FFFFFF" stroke="#3B82F6" stroke-width="1.5"/>
+    <text x="340" y="463" text-anchor="middle" font-family="Consolas, monospace" font-size="13" fill="#1E40AF">dns_parse_query()</text>
+  </g>
+  <line x1="340" y1="502" x2="340" y2="520" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <polygon points="340,520 420,550 340,580 260,550" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="340" y="548" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="13" fill="#1E293B">成功？</text>
+
+  <!-- FORMERR -->
+  <g filter="url(#sh)">
+    <rect x="70" y="532" width="110" height="44" rx="8" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.5"/>
+    <text x="125" y="552" text-anchor="middle" font-family="Consolas, monospace" font-size="12" fill="#B91C1C">FORMERR</text>
+    <text x="125" y="568" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="10" fill="#B91C1C">sendto → continue</text>
+  </g>
+  <line x1="260" y1="550" x2="180" y2="550" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="228" y="542" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="12" fill="#64748B">否</text>
+  <path d="M 125 576 L 125 820 L 48 820" stroke="#94A3B8" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+
+  <line x1="340" y1="580" x2="340" y2="602" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="358" y="596" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="12" fill="#64748B">是</text>
+
+  <!-- dispatch box -->
+  <rect x="88" y="602" width="504" height="268" rx="14" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+  <text x="340" y="628" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="14" font-weight="bold" fill="#1E40AF">config_lookup(qname)</text>
+
+  <g filter="url(#sh)">
+    <rect x="240" y="642" width="200" height="38" rx="8" fill="#EFF6FF" stroke="#3B82F6" stroke-width="1.5"/>
+    <text x="340" y="665" text-anchor="middle" font-family="Consolas, monospace" font-size="12" fill="#1D4ED8">config_lookup(qname)</text>
+  </g>
+
+  <!-- three branch arrows -->
+  <line x1="340" y1="680" x2="130" y2="710" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="340" y1="680" x2="340" y2="710" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="340" y1="680" x2="530" y2="710" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="175" y="698" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="11" fill="#64748B">0.0.0.0</text>
+  <text x="340" y="698" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="11" fill="#64748B">非零 IPv4</text>
+  <text x="505" y="698" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="11" fill="#64748B">未命中</text>
+
+  <!-- block -->
+  <g filter="url(#sh)">
+    <rect x="70" y="710" width="120" height="48" rx="8" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.5"/>
+    <text x="130" y="732" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="11" fill="#B91C1C">本地拦截</text>
+    <text x="130" y="750" text-anchor="middle" font-family="Consolas, monospace" font-size="12" fill="#DC2626">NXDOMAIN</text>
+  </g>
+
+  <!-- local QTYPE -->
+  <polygon points="340,710 390,740 340,770 290,740" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="340" y="738" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="12" fill="#1E293B">QTYPE=A？</text>
+
+  <g filter="url(#sh)">
+    <rect x="268" y="778" width="88" height="40" rx="8" fill="#DCFCE7" stroke="#22C55E" stroke-width="1.5"/>
+    <text x="304" y="802" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="11" fill="#15803D">是 · A 记录</text>
+  </g>
+  <line x1="318" y1="758" x2="304" y2="778" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <g filter="url(#sh)">
+    <rect x="360" y="778" width="100" height="40" rx="8" fill="#EFF6FF" stroke="#3B82F6" stroke-width="1.5"/>
+    <text x="390" y="802" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="11" fill="#1D4ED8">否 · 空 NOERROR</text>
+  </g>
+  <line x1="362" y1="758" x2="390" y2="778" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="378" y="752" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="10" fill="#64748B">fix-A</text>
+
+  <!-- relay -->
+  <g filter="url(#sh)">
+    <rect x="470" y="710" width="130" height="38" rx="8" fill="#EFF6FF" stroke="#2563EB" stroke-width="1.5"/>
+    <text x="535" y="733" text-anchor="middle" font-family="Consolas, monospace" font-size="11" fill="#1D4ED8">relay_to_upstream()</text>
+  </g>
+  <line x1="535" y1="748" x2="535" y2="768" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <polygon points="535,768 585,793 535,818 485,793" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="535" y="792" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="11" fill="#1E293B">成功？</text>
+
+  <g filter="url(#sh)">
+    <rect x="462" y="822" width="88" height="36" rx="8" fill="#DCFCE7" stroke="#22C55E" stroke-width="1.5"/>
+    <text x="494" y="844" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="10" fill="#15803D">是 · 中继完成</text>
+  </g>
+  <line x1="522" y1="808" x2="494" y2="822" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="498" y="802" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="10" fill="#64748B">是</text>
+
+  <g filter="url(#sh)">
+    <rect x="556" y="822" width="88" height="36" rx="8" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.5"/>
+    <text x="600" y="838" text-anchor="middle" font-family="Consolas, monospace" font-size="11" fill="#B91C1C">SERVFAIL</text>
+    <text x="600" y="852" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="9" fill="#B91C1C">fix-B</text>
+  </g>
+  <line x1="558" y1="793" x2="600" y2="822" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="575" y="786" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="10" fill="#64748B">否</text>
+
+  <!-- merge to loop -->
+  <line x1="130" y1="758" x2="130" y2="820" stroke="#475569" stroke-width="1.5"/>
+  <line x1="304" y1="818" x2="304" y2="820" stroke="#475569" stroke-width="1.5"/>
+  <line x1="390" y1="818" x2="390" y2="820" stroke="#475569" stroke-width="1.5"/>
+  <line x1="494" y1="858" x2="494" y2="820" stroke="#475569" stroke-width="1.5"/>
+  <line x1="600" y1="858" x2="600" y2="820" stroke="#475569" stroke-width="1.5"/>
+  <line x1="130" y1="820" x2="600" y2="820" stroke="#475569" stroke-width="1.5"/>
+  <path d="M 340 820 L 48 820" stroke="#2563EB" stroke-width="2" fill="none" marker-end="url(#arr-blue)"/>
+  <path d="M 48 72 L 48 820" stroke="none"/>
+  <path d="M 48 72 L 220 94" stroke="#2563EB" stroke-width="2" fill="none" marker-end="url(#arr-blue)"/>
+
+  <!-- legend -->
+  <rect x="500" y="72" width="148" height="100" rx="8" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="574" y="94" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="11" font-weight="bold" fill="#334155">图例</text>
+  <rect x="512" y="104" width="28" height="16" rx="4" fill="#2563EB"/>
+  <text x="560" y="116" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="10" fill="#64748B">处理步骤</text>
+  <polygon points="524,132 536,144 524,156 512,144" fill="#FEF3C7" stroke="#D97706"/>
+  <text x="560" y="148" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="10" fill="#64748B">条件判断</text>
+  <rect x="512" y="162" width="28" height="16" rx="4" fill="#FEE2E2" stroke="#EF4444"/>
+  <text x="560" y="174" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="10" fill="#64748B">错误/拦截</text>
 </svg>

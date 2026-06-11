@@ -1,0 +1,17 @@
+fix-B (upstream failure -> SERVFAIL) — manual verification
+============================================================
+
+Automation cannot run iptables without root password.
+
+Terminal 1 (project root):
+  cd /mnt/c/projects/DNS-Relay-Server
+  DNS_RELAY_BIND=127.0.0.1 DNS_RELAY_PORT=15353 ./dnsrelay
+  # expect stderr: loaded 208 config entries from dnsrelay.txt
+
+Terminal 2:
+  sudo iptables -A OUTPUT -d 114.114.114.114 -j DROP
+  dig @127.0.0.1 -p 15353 not-in-config-xyz123.com A +time=5 +comments
+  # expect within ~3s: status: SERVFAIL (rcode=2)
+  sudo iptables -D OUTPUT -d 114.114.114.114 -j DROP
+
+Note: Without blocking upstream, random domains return upstream NXDOMAIN, not SERVFAIL.

@@ -170,7 +170,7 @@ int main(void) {
     if (config_load("参考资料/dnsrelay.txt", &g_config) != 0) {
         fprintf(stderr, "warning: failed to load config, relay-only mode\n");
     } else {
-        fprintf(stderr, "loaded %d config entries from 参考资料/dnsrelay.txt\n", g_config.count);
+        fprintf(stderr, "loaded %d config entries from dnsrelay.txt\n", g_config.count);
     }
 
     if (bind_ip != NULL && bind_ip[0] != '\0') {
@@ -178,6 +178,7 @@ int main(void) {
     } else {
         printf("DNS relay server listening on 0.0.0.0:%d ...\n", listen_port);
     }
+    fflush(stdout);
 
     for (;;) {
         fd_set readfds;

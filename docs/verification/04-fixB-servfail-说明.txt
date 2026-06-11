@@ -1,0 +1,17 @@
+fix-B（上游失败 → SERVFAIL）验证说明
+=====================================
+
+本机自动化环境无免密 sudo，未能自动执行 iptables。请组员在 WSL 终端手动完成以下步骤并截图：
+
+1. 终端 1（必须在项目根目录）：
+   cd /mnt/c/projects/DNS-Relay-Server
+   DNS_RELAY_BIND=127.0.0.1 DNS_RELAY_PORT=15353 ./dnsrelay
+   # 确认 stderr: loaded 208 config entries from 参考资料/dnsrelay.txt
+
+2. 终端 2：
+   sudo iptables -A OUTPUT -d 114.114.114.114 -j DROP
+   dig @127.0.0.1 -p 15353 not-in-config-xyz123.com A +time=5 +comments
+   # 预期约 3 秒内: status: SERVFAIL（rcode=2）
+   sudo iptables -D OUTPUT -d 114.114.114.114 -j DROP
+
+注意：若未阻断上游，随机域名会由 114.114.114.114 正常返回 NXDOMAIN，不能用来验证 fix-B。

@@ -1,3 +1,53 @@
+========== 终端截图 2：服务启动（stderr + stdout）==========
+--- stderr (config load) ---
+loaded 208 config entries from 参考资料/dnsrelay.txt
+--- stdout (listen) ---
+
+DNS_RELAY_BIND=127.0.0.1 DNS_RELAY_PORT=15353
+
+========== 终端截图 3：三大功能 dig ==========
+# 本地解析 bupt
+123.127.134.10
+# 本地解析 sina
+202.108.33.89
+# 本地解析 test1
+11.111.11.111
+# 本地拦截 008.cn
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 28800
+;; flags: qr rd ad; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 0
+;; WARNING: recursion requested but not available
+;; WARNING: Message has 23 extra bytes at end
+# 本地拦截 test0
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 38776
+;; flags: qr rd ad; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 0
+;; WARNING: recursion requested but not available
+;; WARNING: Message has 23 extra bytes at end
+# 上游中继 baidu.com
+111.63.65.103
+124.237.177.164
+111.63.65.247
+110.242.74.102
+
+========== 终端截图 4：fix-A 非 A 查询 ==========
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 13797
+;; flags: qr rd ad; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 0
+;; WARNING: recursion requested but not available
+;; WARNING: Message has 23 extra bytes at end
+
+
 qname=bupt id=0x1234 rcode=0 ancount=1 len=38
-qname=008.cn id=0x1234 rcode=3 ancount=0 len=24
-qname=baidu.com id=0x1234 rcode=0 ancount=4 len=91
+MX query: rcode= 0 ancount= 0
+
+========== 终端截图 5：fix-B 上游 SERVFAIL ==========
+# 阻断 114.114.114.114 后查询未配置域名
+(需 root 执行 iptables；手动: sudo iptables -A OUTPUT -d 114.114.114.114 -j DROP)
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 6815
+;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+; COOKIE: 8017b0b138b0ee20010000006a2969bcbfbeeaa9067b0e68 (good)

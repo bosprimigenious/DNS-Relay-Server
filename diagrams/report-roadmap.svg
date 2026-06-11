@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="220" viewBox="0 0 760 220">
+  <rect width="760" height="220" fill="#F8FAFC"/>
+  <text x="380" y="28" text-anchor="middle" font-family="Microsoft YaHei, SimHei, sans-serif" font-size="16" font-weight="bold" fill="#1E3A8A">报告阅读路线图</text>
+  <rect x="24" y="48" width="150" height="130" rx="12" fill="#EFF6FF" stroke="#3B82F6" stroke-width="2"/>
+  <text x="99" y="72" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="13" font-weight="bold" fill="#1D4ED8">需求</text>
+  <text x="99" y="100" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#334155">图1-2 三种模式</text>
+  <rect x="206" y="48" width="150" height="130" rx="12" fill="#F0FDF4" stroke="#22C55E" stroke-width="2"/>
+  <text x="269" y="72" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="13" font-weight="bold" fill="#15803D">设计</text>
+  <text x="269" y="100" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#334155">图3-7 架构流程</text>
+  <rect x="402" y="48" width="150" height="130" rx="12" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <text x="475" y="72" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="13" font-weight="bold" fill="#B45309">实现</text>
+  <text x="475" y="100" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#334155">源码+dig对照</text>
+  <rect x="594" y="48" width="150" height="130" rx="12" fill="#FEE2E2" stroke="#EF4444" stroke-width="2"/>
+  <text x="669" y="72" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="13" font-weight="bold" fill="#B91C1C">测试</text>
+  <text x="669" y="100" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="10" fill="#334155">14步终端实录</text>
+  <text x="380" y="200" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="11" fill="#64748B">先看图 - 对照源码 - 用PNG验证RCODE</text>
+</svg>

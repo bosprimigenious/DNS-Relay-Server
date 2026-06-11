@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="360" viewBox="0 0 680 360">
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#2563EB"/>
+    </marker>
+  </defs>
+  <rect width="680" height="360" fill="#F8FAFC"/>
+  <text x="340" y="28" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#1E3A8A">Module layout</text>
+  <rect x="240" y="48" width="200" height="72" rx="12" fill="#2563EB" stroke="#1D4ED8" stroke-width="2"/>
+  <text x="340" y="78" text-anchor="middle" font-family="Consolas, monospace" font-size="14" font-weight="bold" fill="#FFFFFF">main.c</text>
+  <text x="340" y="100" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#E0E7FF">select loop / relay</text>
+  <rect x="40" y="180" width="150" height="64" rx="10" fill="#FFFFFF" stroke="#3B82F6" stroke-width="2"/>
+  <text x="115" y="202" text-anchor="middle" font-family="Consolas, monospace" font-size="12" fill="#1D4ED8">dns_protocol.*</text>
+  <text x="115" y="222" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#64748B">parse / build</text>
+  <rect x="265" y="180" width="150" height="64" rx="10" fill="#FFFFFF" stroke="#3B82F6" stroke-width="2"/>
+  <text x="340" y="202" text-anchor="middle" font-family="Consolas, monospace" font-size="12" fill="#1D4ED8">config.*</text>
+  <text x="340" y="222" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#64748B">dnsrelay.txt</text>
+  <rect x="490" y="180" width="150" height="64" rx="10" fill="#FFFFFF" stroke="#3B82F6" stroke-width="2"/>
+  <text x="565" y="202" text-anchor="middle" font-family="Consolas, monospace" font-size="12" fill="#1D4ED8">id_map.*</text>
+  <text x="565" y="222" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#64748B">ID mapping</text>
+  <line x1="115" y1="180" x2="300" y2="120" stroke="#2563EB" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="340" y1="180" x2="340" y2="120" stroke="#2563EB" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="565" y1="180" x2="400" y2="120" stroke="#2563EB" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="200" y="280" width="280" height="48" rx="8" fill="#F1F5F9" stroke="#CBD5E1"/>
+  <text x="340" y="308" text-anchor="middle" font-family="Consolas, monospace" font-size="11" fill="#475569">Makefile -Wall -Wextra -std=c11</text>
+</svg>
