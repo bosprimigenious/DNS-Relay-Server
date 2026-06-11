@@ -1,42 +1,60 @@
 # 分支说明（同步 / 异步中继）
 
-本仓库用**功能型分支名**区分上游中继实现，不使用个人姓名或缩写作为分支名。
+## 分支一览
 
-| 分支 | 中继模式 | 说明 | 推荐用途 |
-|------|----------|------|----------|
-| **`main`** | 同步 | **默认交付与答辩**；报告 `docs/report/实验报告-同步.*` | 课程提交、现场演示 |
-| **`relay-async`** | 异步 | 双 socket 非阻塞中继；报告 `docs/report/实验报告-异步.*` | 扩展实验、并发压测对比 |
-
-## 同步 vs 异步（核心差异）
+| 分支 | 角色 | 中继模式 | 报告 | 推荐用途 |
+|------|------|----------|------|----------|
+| **`main`** | **默认主分支** | — | — | 克隆入口、分支导航（本文件） |
+| **`relay-sync`** | 功能线 | 同步 | `docs/report/实验报告-同步.*` | **课设交付、答辩** |
+| **`relay-async`** | 功能线 | 异步 | `docs/report/实验报告-异步.*` | 扩展实验、并发压测 |
 
 ```
-main（同步）:
-  客户端查询 → relay_to_upstream() 内 sendto → recvfrom 阻塞 → 回包
-
-relay-async:
-  客户端查询 → sendto 上游后立即返回主循环
-  上游响应到达 → handle_upstream_response() 查 ID 映射表 → 回包
+克隆仓库（默认落在 main）
+        │
+        ├── git checkout relay-sync   → 同步实现 + 同步版报告
+        └── git checkout relay-async  → 异步实现 + 异步版报告
 ```
 
-## 共同能力（main 当前）
+## 核心差异
+
+```
+relay-sync（同步）:
+  单 client socket + 临时 upstream socket
+  relay_to_upstream() 内 sendto → 阻塞 recvfrom(3s) → 回包
+
+relay-async（异步）:
+  持久 client_fd + upstream_fd，select 双路监听
+  sendto 上游后立即回到 select
+  handle_upstream_response() + find_record_by_new_id() 回包
+```
+
+## 共同能力
 
 - 本地拦截、本地解析、上游中继（RFC 1035）
 - TTL 缓存、CLI（`-b/-p/-s/-f/-c/-v`）、分级日志
 - `select()` 10ms 事件驱动主循环
 
-## 切换分支
+## 切换与编译
 
 ```bash
-git checkout main          # 同步，推荐交付
-git checkout relay-async   # 异步扩展版
+git fetch origin
+
+git checkout relay-sync    # 课设交付
 make clean && make
+make report
+
+git checkout relay-async   # 扩展实验
+make clean && make
+make report
 ```
 
 ## 远程分支
 
 ```bash
-git fetch origin
-git checkout relay-async   # origin/relay-async
+git branch -a
+# origin/main          默认主分支
+# origin/relay-sync    同步功能线
+# origin/relay-async   异步功能线
 ```
 
-> 历史分支 `Yhm`、`relay-sync` 已弃用，请使用 **`main`**（同步）或 **`relay-async`**（异步）。
+> 历史分支 `Yhm`、`copilot/*`、`test-yolo` 已删除。

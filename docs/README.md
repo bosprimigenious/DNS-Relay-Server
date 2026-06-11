@@ -2,20 +2,16 @@
 
 | 路径 | 说明 |
 |------|------|
-| [report/](./report/) | **同步版**实验报告（`实验报告-同步.*`，分支 `main`） |
-| [screenshots/](./screenshots/) | 终端验证截图（`terminal-*.png`） |
+| [BRANCHES.md](./BRANCHES.md) | **分支导航**（main / relay-sync / relay-async） |
+| [report/](./report/) | 实验报告（同步或异步，见当前分支） |
+| [screenshots/](./screenshots/) | 终端验证截图 |
 | [verification/](./verification/) | 集成测试日志 |
-| [dev/](./dev/) | 开发任务清单（`TODO_MCP.md`） |
-| [BRANCHES.md](./BRANCHES.md) | 同步 / 异步分支说明 |
+| [dev/](./dev/) | 开发任务清单 |
 
-## 编译报告 PDF
+## 报告与分支
 
-在项目根目录：
-
-```bash
-make report
-```
-
-输出：`docs/report/实验报告-同步.pdf`，并复制到根目录 `实验报告.pdf` 供课程提交。
-
-异步版报告在 `relay-async` 分支：`make report` 编译 `实验报告-异步.pdf`。
+| 分支 | 报告文件 | 编译 |
+|------|----------|------|
+| `relay-sync` | `report/实验报告-同步.*` | `make report` |
+| `relay-async` | `report/实验报告-异步.*` | `make report` |
+| `main` | 无独立报告 | 请切换到上表分支 |
