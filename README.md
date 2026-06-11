@@ -100,8 +100,9 @@ python3 scripts/dns_query.py 127.0.0.1 5353 bupt 008.cn baidu.com
 
 | 文档 | 路径 |
 |------|------|
-| 实验报告（Markdown） | [docs/report/实验报告.md](docs/report/实验报告.md) |
-| 实验报告（Typst 源） | [docs/report/实验报告.typ](docs/report/实验报告.typ) |
+| 实验报告（同步 · Markdown） | [docs/report/实验报告-同步.md](docs/report/实验报告-同步.md) |
+| 实验报告（同步 · Typst 源） | [docs/report/实验报告-同步.typ](docs/report/实验报告-同步.typ) |
+| 异步版报告 | 见分支 `relay-async` → `docs/report/实验报告-异步.*` |
 | 分支说明 | [docs/BRANCHES.md](docs/BRANCHES.md) |
 | 文档索引 | [docs/README.md](docs/README.md) |
 

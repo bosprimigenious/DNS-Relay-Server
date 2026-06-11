@@ -12,9 +12,9 @@ OBJECTS := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SOURCES))
 all: $(TARGET)
 
 report:
-	cd docs/report && typst compile 实验报告.typ 实验报告.pdf
-	cp docs/report/实验报告.pdf 实验报告.pdf
-	@echo "Report: docs/report/实验报告.pdf (copied to ./实验报告.pdf)"
+	cd docs/report && typst compile 实验报告-同步.typ 实验报告-同步.pdf
+	cp docs/report/实验报告-同步.pdf 实验报告.pdf
+	@echo "Report: docs/report/实验报告-同步.pdf (copied to ./实验报告.pdf)"
 
 $(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $^
