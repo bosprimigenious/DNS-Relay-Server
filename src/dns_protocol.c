@@ -2,15 +2,15 @@
 
 #include <string.h>
 
-static int dns_pos_valid(int pos) {
-    return pos >= 0 && pos < DNS_MAX_MESSAGE;
+static int dns_pos_valid(int pos, int packet_len) {
+    return pos >= 0 && pos < packet_len && pos < DNS_MAX_MESSAGE;
 }
 
-int dns_name_skip(const unsigned char *packet, int *offset) {
+int dns_name_skip(const unsigned char *packet, int packet_len, int *offset) {
     int label_len;
 
     for (;;) {
-        if (!dns_pos_valid(*offset)) {
+        if (!dns_pos_valid(*offset, packet_len)) {
             return -1;
         }
         label_len = packet[*offset];
@@ -19,20 +19,20 @@ int dns_name_skip(const unsigned char *packet, int *offset) {
             return 0;
         }
         if ((label_len & 0xC0) == 0xC0) {
-            if (!dns_pos_valid(*offset + 1)) {
+            if (!dns_pos_valid(*offset + 1, packet_len)) {
                 return -1;
             }
             *offset += 2;
             return 0;
         }
         *offset += 1 + label_len;
-        if (*offset > DNS_MAX_MESSAGE) {
+        if (*offset > packet_len || *offset > DNS_MAX_MESSAGE) {
             return -1;
         }
     }
 }
 
-int dns_name_decode(const unsigned char *packet, int *offset,
+int dns_name_decode(const unsigned char *packet, int packet_len, int *offset,
                     char *out_buf, int buf_size) {
     int jumped = 0;
     int ptr_countdown = 10;
@@ -41,7 +41,7 @@ int dns_name_decode(const unsigned char *packet, int *offset,
     int label_len;
     int i;
 
-    if (pos >= DNS_MAX_MESSAGE) {
+    if (!dns_pos_valid(pos, packet_len)) {
         return -1;
     }
 
@@ -52,19 +52,22 @@ int dns_name_decode(const unsigned char *packet, int *offset,
             if (ptr_countdown-- == 0) {
                 return -1;
             }
+            if (!dns_pos_valid(pos + 1, packet_len)) {
+                return -1;
+            }
             ptr = ((uint16_t)(packet[pos] & 0x3F) << 8) | packet[pos + 1];
             if (!jumped) {
                 *offset += 2;
                 jumped = 1;
             }
             pos = (int)ptr;
-            if (!dns_pos_valid(pos)) {
+            if (!dns_pos_valid(pos, packet_len)) {
                 return -1;
             }
             continue;
         }
 
-        if (!dns_pos_valid(pos)) {
+        if (!dns_pos_valid(pos, packet_len)) {
             return -1;
         }
         label_len = packet[pos];
@@ -83,7 +86,7 @@ int dns_name_decode(const unsigned char *packet, int *offset,
             return -1;
         }
         pos++;
-        if (pos + label_len > DNS_MAX_MESSAGE) {
+        if (pos + label_len > packet_len || pos + label_len > DNS_MAX_MESSAGE) {
             return -1;
         }
         if (out_len + label_len + 1 >= buf_size) {
@@ -160,7 +163,7 @@ int dns_parse_query(const unsigned char *packet, int packet_len, char *qname,
     }
 
     offset = 12;
-    if (dns_name_decode(packet, &offset, qname, qname_size) != 0) {
+    if (dns_name_decode(packet, packet_len, &offset, qname, qname_size) != 0) {
         return -1;
     }
     if (offset + 4 > packet_len) {
@@ -209,7 +212,7 @@ int dns_build_a_response(const unsigned char *query, int query_len,
     }
 
     offset = 12;
-    if (dns_name_skip(query, &offset) != 0) {
+    if (dns_name_skip(query, query_len, &offset) != 0) {
         return -1;
     }
     qname_end_offset = offset;

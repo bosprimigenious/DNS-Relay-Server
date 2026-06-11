@@ -2,7 +2,9 @@
 
 北京邮电大学（BUPT）计算机网络课程设计 —— **DNS 中继服务器**
 
-基于 RFC 1035 实现 UDP DNS 中继：支持本地拦截、本地解析与上游转发，主循环使用 `select()` 事件驱动（10ms 超时），避免忙等待。
+> **分支标识**：本仓库 `main` / `relay-sync` 为**同步上游中继**（课设默认交付）；**异步**实现见分支 `relay-async`。详见 [docs/BRANCHES.md](docs/BRANCHES.md)。
+
+基于 RFC 1035 实现 UDP DNS 中继：支持本地拦截、本地解析、上游转发与 **TTL 缓存**，主循环使用 `select()` 事件驱动（10ms 超时），上游中继仍为**同步**模型（临时 socket + 3s 超时）。
 
 ## 功能
 
@@ -10,7 +12,10 @@
 |------|------|------|
 | 本地拦截 | `dnsrelay.txt` 中 IP 为 `0.0.0.0` | 返回 NXDOMAIN（RCODE=3） |
 | 本地解析 | 配置表中为真实 IPv4 | 返回 A 记录（仅响应 QTYPE=A） |
-| 上游中继 | 域名不在表中 | 转发至 `114.114.114.114`，还原 Transaction ID |
+| 缓存命中 | 上游响应未过期 | 直接返回缓存（按剩余 TTL） |
+| 上游中继 | 域名不在表中且未命中缓存 | 同步转发至上游 DNS，还原 Transaction ID |
+
+其他能力：`-b/-p/-s/-f/-c/-v` 命令行参数（兼容 `DNS_RELAY_BIND/PORT`）、分级日志、完整 `packet_len` 边界检查、非 IN 类查询返回 NOTIMP。
 
 ## 编译
 
@@ -26,7 +31,11 @@ make clean && make
 
 ```bash
 sudo ./dnsrelay
+# 或显式参数（开发测试推荐 5353）
+./dnsrelay -b 127.0.0.1 -p 5353 -s 114.114.114.114 -f 参考资料/dnsrelay.txt -c 1024 -v
 ```
+
+参数：`-b` 绑定 IP · `-p` 端口 · `-s` 上游 DNS · `-f` 配置文件 · `-c` 缓存容量 · `-v/-vv` 日志级别。
 
 启动后加载 `参考资料/dnsrelay.txt`（208 条记录）；加载失败则仅以中继模式运行。
 
@@ -63,8 +72,9 @@ nslookup baidu.com 127.0.0.1   # 中继 → 公网真实 IP
 ## 项目结构
 
 ```
-include/          # 头文件（dns_protocol, config, id_map）
+include/          # dns_protocol, config, id_map, dns_cache, logger, options
 src/              # 实现
+scripts/concurrent_query.py   # 并发压测
 参考资料/         # dnsrelay.txt、RFC 文档
 Makefile
 实验报告.md       # 课程设计报告（导出 PDF 后提交）
