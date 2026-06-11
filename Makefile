@@ -7,9 +7,14 @@ TARGET := dnsrelay
 SOURCES := $(wildcard $(SRC_DIR)/*.c)
 OBJECTS := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SOURCES))
 
-.PHONY: all clean
+.PHONY: all clean report
 
 all: $(TARGET)
+
+report:
+	cd docs/report && typst compile 实验报告.typ 实验报告.pdf
+	cp docs/report/实验报告.pdf 实验报告.pdf
+	@echo "Report: docs/report/实验报告.pdf (copied to ./实验报告.pdf)"
 
 $(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $^

@@ -2,9 +2,9 @@
 
 北京邮电大学（BUPT）计算机网络课程设计 —— **DNS 中继服务器**
 
-> **分支标识**：本仓库 `main` / `relay-sync` 为**同步上游中继**（课设默认交付）；**异步**实现见分支 `relay-async`。详见 [docs/BRANCHES.md](docs/BRANCHES.md)。
+> **分支**：`main` 为**同步上游中继**（课设默认交付）；**异步**实现见 `relay-async`。详见 [docs/BRANCHES.md](docs/BRANCHES.md)。
 
-基于 RFC 1035 实现 UDP DNS 中继：支持本地拦截、本地解析、上游转发与 **TTL 缓存**，主循环使用 `select()` 事件驱动（10ms 超时），上游中继仍为**同步**模型（临时 socket + 3s 超时）。
+基于 RFC 1035 实现 UDP DNS 中继：支持本地拦截、本地解析、上游转发与 **TTL 缓存**，主循环使用 `select()` 事件驱动（10ms 超时），上游中继为**同步**模型（临时 socket + 3s 超时）。
 
 ## 功能
 
@@ -59,59 +59,57 @@ nslookup 008.cn 127.0.0.1      # 拦截 → NXDOMAIN
 nslookup baidu.com 127.0.0.1   # 中继 → 公网真实 IP
 ```
 
-## 配置文件
-
-路径：`参考资料/dnsrelay.txt`
-
-每行格式：`IP 域名`（空格分隔）
-
-- `0.0.0.0 域名` — 拦截
-- `x.x.x.x 域名` — 本地 A 记录
-- 未列出域名 — 中继到上游 DNS
-
 ## 项目结构
 
 ```
-include/          # dns_protocol, config, id_map, dns_cache, logger, options
-src/              # 实现
-scripts/concurrent_query.py   # 并发压测
-参考资料/         # dnsrelay.txt、RFC 文档
+include/              # 头文件（协议、配置、缓存、日志、选项）
+src/                  # C 实现
+scripts/              # 验证、截图、压测脚本
+diagrams/             # 报告用 SVG 示意图
+docs/
+  report/             # 实验报告（.typ / .md / .pdf）
+  screenshots/        # 终端验证截图
+  verification/       # 集成测试日志
+  dev/                # 开发任务清单
+参考资料/             # dnsrelay.txt（程序配置）
 Makefile
-实验报告.md       # 课程设计报告（导出 PDF 后提交）
+README.md
 ```
 
 ## 集成测试
 
-**Linux / WSL 终端内：**
+**Linux / WSL：**
 
 ```bash
-cd /mnt/c/projects/DNS-Relay-Server   # 或你的克隆路径
 bash scripts/run_verification.sh
 sudo sh scripts/test_dns.sh
 python3 scripts/dns_query.py 127.0.0.1 5353 bupt 008.cn baidu.com
 ```
 
-**Windows PowerShell（项目已在 `C:\projects\DNS-Relay-Server`）：**
+**Windows PowerShell：**
 
 ```powershell
-# 不要用 cd /mnt/c/... —— 那是 WSL 路径，PowerShell 无法识别
 .\scripts\run_verification.ps1
-# 或一行：
-wsl bash -c "cd /mnt/c/projects/DNS-Relay-Server && bash scripts/run_verification.sh"
+# 或一键验证 + 截图 + PDF：
+.\scripts\verify_and_screenshot.ps1
 ```
 
 输出保存至 `docs/verification/` 与 `docs/test-output.txt`。
 
-生成报告用终端截图：
+## 文档与报告
+
+| 文档 | 路径 |
+|------|------|
+| 实验报告（Markdown） | [docs/report/实验报告.md](docs/report/实验报告.md) |
+| 实验报告（Typst 源） | [docs/report/实验报告.typ](docs/report/实验报告.typ) |
+| 分支说明 | [docs/BRANCHES.md](docs/BRANCHES.md) |
+| 文档索引 | [docs/README.md](docs/README.md) |
+
+编译 PDF 并复制到根目录（课程提交）：
 
 ```bash
-python3 scripts/gen_terminal_screenshots.py   # → docs/screenshots/terminal-*.png
-typst compile 实验报告.typ 实验报告.pdf
+make report
 ```
-
-## 文档
-
-详细实验报告见 [实验报告.md](./实验报告.md)。提交前导出 `实验报告.pdf`（Typora / VS Code Markdown PDF 插件 / Pandoc）。
 
 ## 交付清单
 

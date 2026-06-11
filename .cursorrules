@@ -81,11 +81,11 @@
   ```
 
 ### 10. 实验报告质量标准（强制）
-- 报告为 Typst 格式（`实验报告.typ`），排版优先于 Markdown
+- 报告为 Typst 格式（`docs/report/实验报告.typ`），排版优先于 Markdown
 - **严禁 ASCII art 框图**：系统架构图、流程图、数据结构图必须用 **SVG** 矢量图绘制
-- SVG 文件存放于 `diagrams/` 目录，在 Typst 中通过 `#figure(image("diagrams/xxx.svg"), caption: [...])` 插入
+- SVG 文件存放于 `diagrams/` 目录，在 Typst 中通过 `#figure(image("../../diagrams/xxx.svg"), caption: [...])` 插入（相对 `docs/report/`）
 - SVG 要求：中文标注、线条清晰、配色专业（蓝/灰/黑为主）、字号统一
-- Typst 编译命令：`typst compile 实验报告.typ 实验报告.pdf`，零错误
+- Typst 编译：项目根目录 `make report`，零错误
 - 编译后验证 PDF 可读：SVG 图片清晰、表格对齐、页码连续、目录超链接可用
 
 ### 11. Typst 报告排版强制约束

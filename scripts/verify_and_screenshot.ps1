@@ -23,12 +23,12 @@ Set-Location $repoWin
 python scripts/gen_terminal_screenshots.py
 
 if (Get-Command typst -ErrorAction SilentlyContinue) {
-    Write-Host "=== Step 3/3: typst compile ==="
-    typst compile --pdf-standard a-2u 实验报告.typ 实验报告.pdf
-    Write-Host "Done: 实验报告.pdf"
+    Write-Host "=== Step 3/3: make report ==="
+    wsl.exe bash -lc "cd '$repoWsl' && make report"
+    Write-Host "Done: docs/report/实验报告.pdf + 实验报告.pdf"
 } else {
     Write-Host "=== Step 3/3: skip typst (not in PATH) ==="
-    Write-Host "Install typst or run: typst compile 实验报告.typ 实验报告.pdf"
+    Write-Host "Install typst or run in WSL: make report"
 }
 
 Write-Host "Screenshots: $repoWin\docs\screenshots\terminal-01-build.png ... terminal-14-fix-b.png"

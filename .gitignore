@@ -1,5 +1,26 @@
 /build/
 /dnsrelay
 dnsrelay.exe
+
+# Cursor / IDE
 .cursor-status.txt
 .cursor-review-request.txt
+.claude/
+
+# 报告编译临时产物
+/_tmp_*.pdf
+/tmp_*.pdf
+/new_compiled.pdf
+/old_compiled.pdf
+/old_report.pdf
+
+# Office 临时锁文件
+~$*
+
+# 参考资料：仅跟踪 dnsrelay.txt 与 README，其余 RFC/PPT 本地查阅
+参考资料/*
+!参考资料/dnsrelay.txt
+!参考资料/README.md
+
+# 根目录提交用 PDF 由 make report 从 docs/report/ 复制生成
+/实验报告.pdf

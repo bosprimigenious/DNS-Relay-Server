@@ -13,7 +13,8 @@ fi
 bash scripts/run_verification.sh
 python3 scripts/gen_terminal_screenshots.py
 if command -v typst >/dev/null 2>&1; then
-  typst compile 实验报告.typ 实验报告.pdf
-  echo "PDF: $ROOT/实验报告.pdf"
+  make report
+else
+  echo "typst not found; skip PDF. Install typst or run: make report"
 fi
 echo "PNG: $ROOT/docs/screenshots/terminal-*.png"
