@@ -11,17 +11,21 @@ OBJECTS := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SOURCES))
 
 all: $(TARGET)
 
+REPORT_DIR := docs/report
+TYPST_ROOT := ../..
+
 report-sync:
-	cd docs/report && typst compile 实验报告-同步.typ 实验报告-同步.pdf
-	@echo "Built docs/report/实验报告-同步.pdf"
+	cd $(REPORT_DIR) && typst compile --root $(TYPST_ROOT) 实验报告-同步.typ 实验报告-同步.pdf
+	@echo "Built $(REPORT_DIR)/实验报告-同步.pdf"
 
 report-async:
-	cd docs/report && typst compile 实验报告-异步.typ 实验报告-异步.pdf
-	@echo "Built docs/report/实验报告-异步.pdf"
+	cd $(REPORT_DIR) && typst compile --root $(TYPST_ROOT) 实验报告-异步.typ 实验报告-异步.pdf
+	@echo "Built $(REPORT_DIR)/实验报告-异步.pdf"
 
 report: report-sync report-async
-	cp docs/report/实验报告-同步.pdf 实验报告.pdf
-	@echo "Both reports built; ./实验报告.pdf <- sync (课设提交)"
+	cp $(REPORT_DIR)/实验报告-同步.pdf 实验报告.pdf
+	@echo "Both PDFs: $(REPORT_DIR)/实验报告-同步.pdf, $(REPORT_DIR)/实验报告-异步.pdf"
+	@echo "Submit copy: ./实验报告.pdf (sync)"
 
 $(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $^

@@ -14,8 +14,8 @@
 
 | 报告 | 文件 | 编译 |
 |------|------|------|
-| 同步版 | `report/实验报告-同步.*` | `make report-sync` |
-| 异步版 | `report/实验报告-异步.*` | `make report-async` |
+| 同步版 | `report/实验报告-同步.{typ,md,pdf}` | `make report-sync` |
+| 异步版 | `report/实验报告-异步.{typ,md,pdf}` | `make report-async` |
 
 ```bash
 make report   # 两份 PDF + 根目录 实验报告.pdf（同步版，课设用）
