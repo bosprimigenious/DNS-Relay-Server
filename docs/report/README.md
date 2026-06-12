@@ -1,24 +1,26 @@
 # 实验报告（同步 + 异步）
 
-**两个功能分支均包含以下两份报告**（源码与 PDF 同目录存放，便于对照阅读）：
+**`relay-sync` 与 `relay-async` 均包含以下两份完整报告**（含 PDF）：
 
-| 文件 | 对应分支实现 | 说明 |
-|------|--------------|------|
-| `实验报告-同步.typ` / `.md` / `.pdf` | `relay-sync`（`main` 导航） | 同步 `relay_to_upstream` 阻塞模型 |
+| 文件 | 对应实现 | 说明 |
+|------|----------|------|
+| `实验报告-同步.typ` / `.md` / `.pdf` | `relay-sync` | 同步 `relay_to_upstream` 阻塞模型 |
 | `实验报告-异步.typ` / `.md` / `.pdf` | `relay-async` | 双 socket + ID 表异步回包 |
 
-## 编译
+## 编译 PDF
 
-在项目根目录（需安装 [Typst](https://typst.app/)）：
+在项目根目录（需 [Typst](https://typst.app/)）：
 
 ```bash
-make report-sync    # 仅同步版 PDF
-make report-async   # 仅异步版 PDF
+make report-sync    # → docs/report/实验报告-同步.pdf
+make report-async   # → docs/report/实验报告-异步.pdf
 make report         # 两份都编译；根目录 实验报告.pdf ← 同步版（课设提交）
 ```
 
+Typst 使用 `--root ../..`，以便引用 `diagrams/` 与 `docs/screenshots/`。
+
 ## 课设提交
 
-打包 **`relay-sync`** 分支时，提交根目录 `实验报告.pdf`（由 `make report` 从同步版复制）。
+在 **`relay-sync`** 分支：`make report` 后提交根目录 `实验报告.pdf`（同步版副本）。
 
-异步版 PDF 位于 `docs/report/实验报告-异步.pdf`，用于扩展实验与答辩对比说明。
+异步版 PDF：`docs/report/实验报告-异步.pdf`（答辩对比 / 扩展实验说明）。
