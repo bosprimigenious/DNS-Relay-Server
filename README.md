@@ -67,7 +67,7 @@ src/                  # C 实现
 scripts/              # 验证、截图、压测脚本
 diagrams/             # 报告用 SVG 示意图
 docs/
-  report/             # 实验报告（.typ / .md / .pdf）
+  report/             # 实验报告-同步.* + 实验报告-异步.*（两份均有）
   screenshots/        # 终端验证截图
   verification/       # 集成测试日志
   dev/                # 开发任务清单
@@ -100,16 +100,18 @@ python3 scripts/dns_query.py 127.0.0.1 5353 bupt 008.cn baidu.com
 
 | 文档 | 路径 |
 |------|------|
-| 实验报告（同步 · Markdown） | [docs/report/实验报告-同步.md](docs/report/实验报告-同步.md) |
-| 实验报告（同步 · Typst 源） | [docs/report/实验报告-同步.typ](docs/report/实验报告-同步.typ) |
-| 异步版报告 | 见分支 `relay-async` → `docs/report/实验报告-异步.*` |
+| 实验报告（同步） | [docs/report/实验报告-同步.md](docs/report/实验报告-同步.md) |
+| 实验报告（异步） | [docs/report/实验报告-异步.md](docs/report/实验报告-异步.md) |
+| 报告索引 | [docs/report/README.md](docs/report/README.md) |
 | 分支说明 | [docs/BRANCHES.md](docs/BRANCHES.md) |
 | 文档索引 | [docs/README.md](docs/README.md) |
 
 编译 PDF 并复制到根目录（课程提交）：
 
 ```bash
-make report
+make report         # 同步 + 异步 PDF；根目录 实验报告.pdf ← 同步版（课设）
+make report-sync    # 仅同步版
+make report-async   # 仅异步版
 ```
 
 ## 交付清单
