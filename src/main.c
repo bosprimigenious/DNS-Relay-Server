@@ -1,3 +1,14 @@
+/*
+ * main.c — DNS 中继服务器主程序（同步上游中继 · relay-sync）
+ *
+ * 模块划分：
+ *   1. 全局状态与常量
+ *   2. 发送层 — UDP 发包与错误响应构造
+ *   3. 同步上游中继 — 临时 socket、阻塞 recvfrom(3s)、还原 ID 回包
+ *   4. 主程序 — 单 socket 初始化与 select 事件循环
+ *   5. 查询调度（内联于主循环）— 拦截 / 本地解析 / 缓存 / 同步中继
+ */
+
 #include <arpa/inet.h>
 #include <errno.h>
 #include <netinet/in.h>
@@ -17,11 +28,15 @@
 #include "options.h"
 #include "relay_mode.h"
 
+/* ---------- 模块 1：全局状态与常量 ---------- */
+
 #define ID_MAP_TIMEOUT_SEC   5
 #define SELECT_TIMEOUT_USEC  10000
 
 static config_t g_config;
 static dns_cache_t g_cache;
+
+/* ---------- 模块 2：发送层 ---------- */
 
 static int send_packet(int sockfd, const unsigned char *packet, int packet_len,
                        const struct sockaddr_in *addr, socklen_t addr_len) {
@@ -49,6 +64,8 @@ static int send_error_response(int sockfd, const unsigned char *query, int query
     return send_packet(sockfd, response, response_len, client_addr, client_len);
 }
 
+/* ---------- 模块 3：同步上游中继 ---------- */
+
 static int relay_to_upstream(int sockfd,
                              const char *upstream_ip,
                              const unsigned char *query,
@@ -71,6 +88,7 @@ static int relay_to_upstream(int sockfd,
     time_t now;
     int map_ok;
 
+    /* 每次中继临时创建上游 socket，用完即关闭 */
     upstream_fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (upstream_fd < 0) {
         return -1;
@@ -119,6 +137,7 @@ static int relay_to_upstream(int sockfd,
         return -1;
     }
 
+    /* 阻塞等待上游响应，此期间主循环无法处理新查询 */
     upstream_len = sizeof(upstream_addr);
     resp_len = recvfrom(upstream_fd, response, sizeof(response), 0,
                         (struct sockaddr *)&upstream_addr, &upstream_len);
@@ -145,6 +164,8 @@ static int relay_to_upstream(int sockfd,
     LOG_INFO("RELAY", "qname=%s upstream=%s len=%zd", qname, upstream_ip, resp_len);
     return 0;
 }
+
+/* ---------- 模块 4：主程序 — 初始化与事件循环 ---------- */
 
 int main(int argc, char **argv) {
     options_t options;
@@ -213,6 +234,7 @@ int main(int argc, char **argv) {
              options.cache_size);
     fflush(stdout);
 
+    /* select 仅监听 client socket，10ms 超时避免忙等待 */
     for (;;) {
         fd_set readfds;
         struct timeval timeout;
@@ -242,6 +264,7 @@ int main(int argc, char **argv) {
             continue;
         }
 
+        /* ---------- 模块 5：查询调度（内联） ---------- */
         if (FD_ISSET(sockfd, &readfds)) {
             unsigned char buffer[DNS_MAX_MESSAGE];
             struct sockaddr_in client_addr;
@@ -284,6 +307,7 @@ int main(int argc, char **argv) {
                     continue;
                 }
 
+                /* 5a. 本地拦截 / 本地解析（dnsrelay.txt 命中） */
                 entry = config_lookup(&g_config, qname);
                 if (entry != NULL) {
                     if (entry->ip.s_addr == 0) {
@@ -308,6 +332,7 @@ int main(int argc, char **argv) {
                     continue;
                 }
 
+                /* 5b. TTL 缓存命中 */
                 {
                     unsigned char cached_resp[DNS_MAX_MESSAGE];
                     int cached_len = 0;
@@ -327,6 +352,7 @@ int main(int argc, char **argv) {
                     }
                 }
 
+                /* 5c. 同步上游中继：函数内阻塞等待，失败回 SERVFAIL */
                 if (relay_to_upstream(sockfd, options.upstream_ip, buffer,
                                       (int)received, original_id, &client_addr,
                                       qname, qtype, qclass) != 0) {
