@@ -199,6 +199,9 @@ int main(int argc, char **argv) {
         LOG_INFO("INFO", "failed to load %s, relay-only mode", options.hosts_file);
     } else {
         LOG_INFO("INFO", "loaded %d entries from %s", g_config.count, options.hosts_file);
+        if (options.verbosity >= 1) {
+            config_print_policy_table(&g_config, stderr);
+        }
     }
 
     if (dns_cache_init(&g_cache, options.cache_size) != 0) {

@@ -2,6 +2,7 @@
 #define CONFIG_H
 
 #include <netinet/in.h>
+#include <stdio.h>
 
 #define CONFIG_MAX_ENTRIES 4096
 
@@ -19,5 +20,7 @@ typedef struct {
 int config_load(const char *path, config_t *cfg);
 
 const config_entry_t *config_lookup(const config_t *cfg, const char *domain);
+
+void config_print_policy_table(const config_t *cfg, FILE *stream);
 
 #endif
