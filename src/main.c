@@ -286,7 +286,32 @@ int main(int argc, char **argv) {
 
                 entry = config_lookup(&g_config, qname);
                 if (entry != NULL) {
-                    if (entry->ip.s_addr == 0) {
+                    if (entry->block_ipv6_only) {
+                        /* IPv6专项拦截：AAAA→NXDOMAIN，A记录→上游中继 */
+                        if (qtype == DNS_QTYPE_AAAA) {
+                            LOG_INFO("BLOCK", "qname=%s IPv6 blocked", qname);
+                            send_error_response(sockfd, buffer, (int)received, &client_addr,
+                                              client_len, DNS_RCODE_NXDOMAIN);
+                        } else if (qtype == DNS_QTYPE_A) {
+                            LOG_INFO("LOCAL", "qname=%s qtype=A relay to upstream (IPv6 blocked)",
+                                     qname);
+                            if (relay_to_upstream(sockfd, options.upstream_ip, buffer,
+                                                  (int)received, original_id, &client_addr,
+                                                  qname, qtype, qclass) != 0) {
+                                send_error_response(sockfd, buffer, (int)received, &client_addr,
+                                                  client_len, DNS_RCODE_SERVFAIL);
+                            }
+                        } else {
+                            LOG_INFO("LOCAL", "qname=%s qtype=%u relay to upstream (IPv6 blocked)",
+                                     qname, qtype);
+                            if (relay_to_upstream(sockfd, options.upstream_ip, buffer,
+                                                  (int)received, original_id, &client_addr,
+                                                  qname, qtype, qclass) != 0) {
+                                send_error_response(sockfd, buffer, (int)received, &client_addr,
+                                                  client_len, DNS_RCODE_SERVFAIL);
+                            }
+                        }
+                    } else if (entry->ip.s_addr == 0) {
                         LOG_INFO("BLOCK", "qname=%s", qname);
                         send_error_response(sockfd, buffer, (int)received, &client_addr,
                                           client_len, DNS_RCODE_NXDOMAIN);
@@ -302,8 +327,15 @@ int main(int argc, char **argv) {
                                      inet_ntoa(entry->ip));
                         }
                     } else {
-                        send_error_response(sockfd, buffer, (int)received, &client_addr,
-                                          client_len, DNS_RCODE_NOERROR);
+                        LOG_INFO("LOCAL", "qname=%s qtype=%u local hit, relay to upstream",
+                                 qname, qtype);
+                        /* 本地只有 IPv4，非 A 查询转发上游，避免空响应被 nslookup 判超时 */
+                        if (relay_to_upstream(sockfd, options.upstream_ip, buffer,
+                                              (int)received, original_id, &client_addr,
+                                              qname, qtype, qclass) != 0) {
+                            send_error_response(sockfd, buffer, (int)received, &client_addr,
+                                              client_len, DNS_RCODE_SERVFAIL);
+                        }
                     }
                     continue;
                 }

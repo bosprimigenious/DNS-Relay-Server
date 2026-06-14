@@ -31,7 +31,12 @@ int config_load(const char *path, config_t *cfg) {
         }
 
         entry = &cfg->entries[cfg->count];
-        if (inet_pton(AF_INET, ip_str, &entry->ip) != 1) {
+        entry->block_ipv6_only = 0;   /* 默认不拦截IPv6 */
+
+        if (strcmp(ip_str, "::") == 0) {
+            entry->block_ipv6_only = 1;
+            entry->ip.s_addr = 0;      /* 占位，不会走全拦截分支 */
+        } else if (inet_pton(AF_INET, ip_str, &entry->ip) != 1) {
             fprintf(stderr, "config: skip invalid IP on line: %s", line);
             continue;
         }

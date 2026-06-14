@@ -8,6 +8,7 @@
 typedef struct {
     struct in_addr ip;
     char domain[256];
+    int block_ipv6_only;    /* 1=只拦截IPv6(AAAA)，A记录照常走上游 */
 } config_entry_t;
 
 typedef struct {
