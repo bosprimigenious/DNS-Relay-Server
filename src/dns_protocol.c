@@ -179,22 +179,40 @@ int dns_build_error_response(const unsigned char *query, int query_len,
                              unsigned char *response, int response_size,
                              uint8_t rcode) {
     dns_header_t *hdr;
+    int offset;
+    int question_len;
+    int response_len;
 
-    if (query_len < 12 || response_size < query_len) {
+    if (query_len < 12) {
         return -1;
     }
 
-    memcpy(response, query, (size_t)query_len);
+    offset = 12;
+    if (dns_name_skip(query, query_len, &offset) != 0) {
+        return -1;
+    }
+    if (offset + 4 > query_len) {
+        return -1;
+    }
+
+    question_len = offset + 4 - 12;
+    response_len = 12 + question_len;
+    if (response_len > response_size) {
+        return -1;
+    }
+
+    memcpy(response, query, (size_t)response_len);
     hdr = (dns_header_t *)response;
     dns_header_network_to_host(hdr);
     hdr->flags.bits.qr = 1;
     hdr->flags.bits.ra = 0;
     hdr->flags.bits.rcode = rcode;
+    hdr->qdcount = htons(1);
     hdr->ancount = 0;
     hdr->nscount = 0;
     hdr->arcount = 0;
     dns_header_host_to_network(hdr);
-    return query_len;
+    return response_len;
 }
 
 int dns_build_a_response(const unsigned char *query, int query_len,

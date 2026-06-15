@@ -1,13 +1,12 @@
 #ifndef DNS_PROTOCOL_H
 #define DNS_PROTOCOL_H
 
-#include <arpa/inet.h>
 #include <stdint.h>
-#if defined(__linux__) || defined(__GLIBC__)
-#include <endian.h>
-#endif
+#include "net_compat.h"
 
-#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#if defined(_WIN32) || defined(_MSC_VER)
+#define DNS_LITTLE_ENDIAN_BITFIELD 1
+#elif defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 #define DNS_LITTLE_ENDIAN_BITFIELD 1
 #elif defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
 #define DNS_LITTLE_ENDIAN_BITFIELD 0
@@ -16,7 +15,7 @@
 #elif defined(BYTE_ORDER) && (BYTE_ORDER == BIG_ENDIAN)
 #define DNS_LITTLE_ENDIAN_BITFIELD 0
 #else
-#error "Unable to determine host byte order for DNS bit-fields. Please define __BYTE_ORDER__ or BYTE_ORDER for your platform."
+#error "Unable to determine host byte order for DNS bit-fields."
 #endif
 
 /* RFC 1035 DNS message header: 12 bytes */

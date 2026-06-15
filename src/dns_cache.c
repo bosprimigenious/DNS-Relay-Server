@@ -4,7 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
+
+#include "net_compat.h"
 
 static uint16_t dns_read_u16(const unsigned char *ptr) {
     uint16_t net_value;

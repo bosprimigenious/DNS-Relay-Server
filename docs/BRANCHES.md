@@ -34,6 +34,15 @@ relay-async（异步）:
 - TTL 缓存、CLI（`-b/-p/-s/-f/-c/-v`）、分级日志
 - `select()` 10ms 事件驱动主循环
 
+## 编译（Windows 原生）
+
+```powershell
+mingw32-make clean && mingw32-make    # 产物 dnsrelay.exe
+# 或：powershell -File scripts\build.ps1
+```
+
+详见 [docs/WINDOWS.md](WINDOWS.md)。Linux/WSL 仍可用同一 Makefile（产物 `dnsrelay`）。
+
 ## 切换与编译
 
 ```bash

@@ -1,7 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include <netinet/in.h>
+#include "net_compat.h"
 #include <stdio.h>
 
 #define CONFIG_MAX_ENTRIES 4096

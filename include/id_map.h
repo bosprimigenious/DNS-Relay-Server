@@ -1,9 +1,9 @@
 #ifndef ID_MAP_H
 #define ID_MAP_H
 
-#include <netinet/in.h>
 #include <stdint.h>
 #include <time.h>
+#include "net_compat.h"
 
 #include "dns_protocol.h"
 

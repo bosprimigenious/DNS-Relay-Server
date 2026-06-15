@@ -1,34 +1,24 @@
-# 一键：WSL 全量验证 + 生成 14 张终端 PNG + 编译 PDF
-# 用法（PowerShell）：
-#   cd C:\projects\DNS-Relay-Server
+# 一键：Windows 原生验证 + 14 张终端 PNG +（可选）编译 PDF
+#   cd C:\Fullstack_Development\DNS-Relay-Server
 #   .\scripts\verify_and_screenshot.ps1
 $ErrorActionPreference = "Stop"
-$repoWin = Split-Path $PSScriptRoot -Parent
-if (-not (Test-Path "$repoWin\Makefile")) {
-    $repoWin = "C:\projects\DNS-Relay-Server"
-}
-$repoWsl = "/mnt/c/projects/DNS-Relay-Server"
-if ($repoWin -match "^([A-Za-z]):\\(.*)$") {
-    $drive = $Matches[1].ToLower()
-    $rest = ($Matches[2] -replace "\\", "/")
-    $repoWsl = "/mnt/$drive/$rest"
-}
+$repo = Split-Path $PSScriptRoot -Parent
+Set-Location $repo
 
-Write-Host "=== Step 1/3: run_verification.sh (WSL root, fix-B needs iptables) ==="
-Write-Host "Repo: $repoWsl"
-wsl.exe -u root bash -lc "cd '$repoWsl' && sed -i 's/\r$//' scripts/run_verification.sh && bash scripts/run_verification.sh"
+Write-Host "=== Step 1/3: run_verification.ps1 (native Windows) ===" -ForegroundColor Cyan
+& "$PSScriptRoot\run_verification.ps1"
 
-Write-Host "=== Step 2/3: gen_terminal_screenshots.py ==="
-Set-Location $repoWin
-python scripts/gen_terminal_screenshots.py
+Write-Host "=== Step 2/3: gen_terminal_screenshots.py ===" -ForegroundColor Cyan
+python scripts\gen_terminal_screenshots.py
 
 if (Get-Command typst -ErrorAction SilentlyContinue) {
-    Write-Host "=== Step 3/3: make report ==="
-    wsl.exe bash -lc "cd '$repoWsl' && make report"
-    Write-Host "Done: docs/report/实验报告.pdf + 实验报告.pdf"
+    Write-Host "=== Step 3/3: typst report-async ===" -ForegroundColor Cyan
+    Push-Location docs\report
+    typst compile --root ..\.. 实验报告-异步.typ 实验报告-异步.pdf
+    Pop-Location
+    Write-Host "Done: docs\report\实验报告-异步.pdf"
 } else {
-    Write-Host "=== Step 3/3: skip typst (not in PATH) ==="
-    Write-Host "Install typst or run in WSL: make report"
+    Write-Host "=== Step 3/3: skip typst (install typst for PDF) ===" -ForegroundColor Yellow
 }
 
-Write-Host "Screenshots: $repoWin\docs\screenshots\terminal-01-build.png ... terminal-14-fix-b.png"
+Write-Host "Screenshots: docs\screenshots\terminal-01-build.png ... terminal-14-fix-b.png"

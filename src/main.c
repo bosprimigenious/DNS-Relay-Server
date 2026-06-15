@@ -40,7 +40,7 @@ static int send_packet(int sockfd, const unsigned char *packet, int packet_len,
                        const struct sockaddr_in *addr, socklen_t addr_len) {
     ssize_t sent;
 
-    sent = sendto(sockfd, packet, (size_t)packet_len, 0,
+    sent = sendto(sockfd, (const char *)packet, (size_t)packet_len, 0,
                   (const struct sockaddr *)addr, addr_len);
     if (sent < 0 || sent != packet_len) {
         return -1;
@@ -119,7 +119,7 @@ static void handle_upstream_response(int client_fd, int upstream_fd,
     uint16_t new_id;
     ssize_t received;
 
-    received = recvfrom(upstream_fd, response, sizeof(response), 0,
+    received = recvfrom(upstream_fd, (char *)response, sizeof(response), 0,
                         (struct sockaddr *)&response_addr, &response_addr_len);
     if (received < 0) {
 #ifdef _WIN32
@@ -261,6 +261,27 @@ static void relay_query(int client_fd, int upstream_fd,
              qname, original_id, new_id, inet_ntoa(upstream_addr->sin_addr));
 }
 
+static int is_reverse_dns_qname(const char *qname) {
+    size_t len;
+    const char *suffix;
+
+    if (qname == NULL) {
+        return 0;
+    }
+    len = strlen(qname);
+    suffix = ".in-addr.arpa";
+    if (len >= strlen(suffix) &&
+        strcasecmp(qname + len - strlen(suffix), suffix) == 0) {
+        return 1;
+    }
+    suffix = ".ip6.arpa";
+    if (len >= strlen(suffix) &&
+        strcasecmp(qname + len - strlen(suffix), suffix) == 0) {
+        return 1;
+    }
+    return 0;
+}
+
 static void handle_client_query(int client_fd, int upstream_fd,
                                 const struct sockaddr_in *upstream_addr) {
     unsigned char query[DNS_MAX_MESSAGE];
@@ -276,7 +297,7 @@ static void handle_client_query(int client_fd, int upstream_fd,
     time_t now;
     int local_result;
 
-    received = recvfrom(client_fd, query, sizeof(query), 0,
+    received = recvfrom(client_fd, (char *)query, sizeof(query), 0,
                         (struct sockaddr *)&client_addr, &client_len);
     if (received < 0) {
         return;
@@ -296,6 +317,13 @@ static void handle_client_query(int client_fd, int upstream_fd,
     if (qclass != DNS_QCLASS_IN) {
         send_error_response(client_fd, query, (int)received, &client_addr,
                             client_len, DNS_RCODE_NOTIMP);
+        return;
+    }
+
+    if (is_reverse_dns_qname(qname)) {
+        LOG_INFO("FAST", "qname=%s reverse-zone empty NOERROR", qname);
+        send_error_response(client_fd, query, (int)received, &client_addr,
+                            client_len, DNS_RCODE_NOERROR);
         return;
     }
 
@@ -326,6 +354,13 @@ static void handle_client_query(int client_fd, int upstream_fd,
             }
             return;
         }
+    }
+
+    if (qtype != DNS_QTYPE_A) {
+        LOG_INFO("FAST", "qname=%s qtype=%u empty NOERROR (non-A, skip relay)", qname, qtype);
+        send_error_response(client_fd, query, (int)received, &client_addr,
+                            client_len, DNS_RCODE_NOERROR);
+        return;
     }
 
     relay_query(client_fd, upstream_fd, upstream_addr, query, (int)received,
@@ -422,6 +457,7 @@ int main(int argc, char **argv) {
     }
 
     LOG_INFO("INFO", "relay mode: %s (%s)", DNS_RELAY_MODE_NAME, DNS_RELAY_MODE_LABEL);
+    LOG_INFO("INFO", "build tag: %s", DNS_RELAY_BUILD_TAG);
     LOG_INFO("INFO", "listening on %s:%u upstream=%s cache=%zu",
              options.bind_ip, options.listen_port, options.upstream_ip,
              options.cache_size);

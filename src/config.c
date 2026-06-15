@@ -1,9 +1,7 @@
 #include "config.h"
 
-#include <arpa/inet.h>
 #include <stdio.h>
 #include <string.h>
-#include <strings.h>
 
 int config_load(const char *path, config_t *cfg) {
     FILE *fp;
