@@ -1,13 +1,4 @@
-#include <arpa/inet.h>
-#include <errno.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/select.h>
-#include <sys/socket.h>
-#include <time.h>
-#include <unistd.h>
+#include "net_compat.h"
 
 #include "config.h"
 #include "dns_cache.h"
@@ -22,6 +13,28 @@
 
 static config_t g_config;
 static dns_cache_t g_cache;
+static uint16_t g_next_upstream_id = 1;
+
+static uint16_t dns_read_id(const unsigned char *packet) {
+    uint16_t net_id;
+
+    memcpy(&net_id, packet, sizeof(net_id));
+    return ntohs(net_id);
+}
+
+static void dns_write_id(unsigned char *packet, uint16_t id) {
+    uint16_t net_id = htons(id);
+
+    memcpy(packet, &net_id, sizeof(net_id));
+}
+
+static void make_client_addr(const id_map_record_t *record,
+                             struct sockaddr_in *client_addr) {
+    memset(client_addr, 0, sizeof(*client_addr));
+    client_addr->sin_family = AF_INET;
+    client_addr->sin_addr = record->client_ip;
+    client_addr->sin_port = record->client_port;
+}
 
 static int send_packet(int sockfd, const unsigned char *packet, int packet_len,
                        const struct sockaddr_in *addr, socklen_t addr_len) {
@@ -49,108 +62,284 @@ static int send_error_response(int sockfd, const unsigned char *query, int query
     return send_packet(sockfd, response, response_len, client_addr, client_len);
 }
 
-static int relay_to_upstream(int sockfd,
-                             const char *upstream_ip,
-                             const unsigned char *query,
-                             int query_len,
-                             uint16_t original_id,
-                             struct sockaddr_in *client_addr,
-                             const char *qname,
-                             uint16_t qtype,
-                             uint16_t qclass) {
-    int upstream_fd;
-    struct sockaddr_in upstream_addr;
-    struct timeval tv;
-    static uint16_t g_next_id = 1;
-    uint16_t new_id;
-    unsigned char modified_query[DNS_MAX_MESSAGE];
+static uint16_t allocate_upstream_id(void) {
+    uint16_t start = g_next_upstream_id;
+
+    for (;;) {
+        if (g_next_upstream_id == 0) {
+            g_next_upstream_id = 1;
+        }
+        if (find_record_by_new_id(g_next_upstream_id) == NULL) {
+            uint16_t allocated = g_next_upstream_id;
+
+            g_next_upstream_id++;
+            if (g_next_upstream_id == 0) {
+                g_next_upstream_id = 1;
+            }
+            return allocated;
+        }
+
+        g_next_upstream_id++;
+        if (g_next_upstream_id == 0) {
+            g_next_upstream_id = 1;
+        }
+        if (g_next_upstream_id == start) {
+            return 0;
+        }
+    }
+}
+
+static void process_expired_queries(int client_fd) {
+    time_t now = time(NULL);
+    id_map_record_t *record;
+
+    while ((record = find_expired_record(now, ID_MAP_TIMEOUT_SEC)) != NULL) {
+        struct sockaddr_in client_addr;
+
+        make_client_addr(record, &client_addr);
+        LOG_INFO("TIMEOUT", "qname=%s original_id=%u new_id=%u",
+                 record->qname, record->original_id, record->new_id);
+        if (send_error_response(client_fd, record->query, record->query_len,
+                                &client_addr, sizeof(client_addr),
+                                DNS_RCODE_SERVFAIL) != 0) {
+            LOG_ERROR("ERROR", "failed to send timeout SERVFAIL for qname=%s",
+                      record->qname);
+        }
+        release_record(record);
+    }
+}
+
+static void handle_upstream_response(int client_fd, int upstream_fd,
+                                     const struct sockaddr_in *upstream_addr) {
     unsigned char response[DNS_MAX_MESSAGE];
-    socklen_t upstream_len;
-    ssize_t resp_len;
-    ssize_t sent;
+    struct sockaddr_in response_addr;
+    socklen_t response_addr_len = sizeof(response_addr);
+    id_map_record_t *record;
     time_t now;
-    int map_ok;
+    uint16_t new_id;
+    ssize_t received;
 
-    upstream_fd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (upstream_fd < 0) {
-        return -1;
+    received = recvfrom(upstream_fd, response, sizeof(response), 0,
+                        (struct sockaddr *)&response_addr, &response_addr_len);
+    if (received < 0) {
+#ifdef _WIN32
+        if (WSAGetLastError() != WSAEINTR && WSAGetLastError() != WSAEWOULDBLOCK) {
+            LOG_ERROR("ERROR", "recvfrom upstream failed: %d", WSAGetLastError());
+        }
+#else
+        if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK) {
+            LOG_ERROR("ERROR", "recvfrom upstream failed: %s", strerror(errno));
+        }
+#endif
+        return;
     }
 
-    tv.tv_sec = 3;
-    tv.tv_usec = 0;
-    if (setsockopt(upstream_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
-        close(upstream_fd);
-        return -1;
+    if (response_addr.sin_addr.s_addr != upstream_addr->sin_addr.s_addr ||
+        response_addr.sin_port != upstream_addr->sin_port) {
+        LOG_INFO("UPSTREAM", "ignored packet from unexpected server");
+        return;
+    }
+    if (received < 12) {
+        LOG_INFO("UPSTREAM", "ignored short upstream response len=%zd", received);
+        return;
     }
 
-    memset(&upstream_addr, 0, sizeof(upstream_addr));
-    upstream_addr.sin_family = AF_INET;
-    upstream_addr.sin_port = htons(DNS_PORT);
-    if (inet_pton(AF_INET, upstream_ip, &upstream_addr.sin_addr) != 1) {
-        close(upstream_fd);
-        return -1;
-    }
-
-    new_id = g_next_id++;
-    if (g_next_id == 0) {
-        g_next_id = 1;
+    new_id = dns_read_id(response);
+    record = find_record_by_new_id(new_id);
+    if (record == NULL) {
+        LOG_INFO("UPSTREAM", "stale response new_id=%u", new_id);
+        return;
     }
 
     now = time(NULL);
-    map_ok = add_record(original_id, new_id, client_addr->sin_addr,
-                        client_addr->sin_port, now);
-    if (map_ok != 0) {
-        clear_timeout_records(now, 0);
-        map_ok = add_record(original_id, new_id, client_addr->sin_addr,
-                            client_addr->sin_port, now);
-        if (map_ok != 0) {
-            close(upstream_fd);
-            return -1;
+    if (dns_cache_store(&g_cache, record->qname, record->qtype, record->qclass,
+                        response, (int)received, now) == 0) {
+        LOG_DEBUG("UPSTREAM", "cached qname=%s", record->qname);
+    }
+
+    dns_write_id(response, record->original_id);
+
+    {
+        struct sockaddr_in client_addr;
+
+        make_client_addr(record, &client_addr);
+        if (send_packet(client_fd, response, (int)received,
+                        &client_addr, sizeof(client_addr)) != 0) {
+            LOG_ERROR("ERROR", "failed to send response for qname=%s", record->qname);
+        } else {
+            LOG_INFO("UPSTREAM", "qname=%s original_id=%u new_id=%u len=%zd",
+                     record->qname, record->original_id, record->new_id, received);
         }
     }
 
-    memcpy(modified_query, query, (size_t)query_len);
-    *(uint16_t *)modified_query = htons(new_id);
+    release_record(record);
+}
 
-    sent = sendto(upstream_fd, modified_query, (size_t)query_len, 0,
-                  (const struct sockaddr *)&upstream_addr, sizeof(upstream_addr));
-    if (sent < 0) {
-        close(upstream_fd);
+static int try_local_response(int client_fd, const unsigned char *query, int query_len,
+                              const struct sockaddr_in *client_addr,
+                              socklen_t client_len, const char *qname,
+                              uint16_t qtype, const config_entry_t *entry) {
+    unsigned char response[DNS_MAX_MESSAGE];
+    int response_len;
+
+    if (entry->block_ipv6_only) {
+        if (qtype == DNS_QTYPE_AAAA) {
+            LOG_INFO("BLOCK", "qname=%s IPv6 blocked", qname);
+            return send_error_response(client_fd, query, query_len, client_addr,
+                                       client_len, DNS_RCODE_NXDOMAIN);
+        }
+        return 1;
+    }
+
+    if (entry->ip.s_addr == 0) {
+        LOG_INFO("BLOCK", "qname=%s", qname);
+        return send_error_response(client_fd, query, query_len, client_addr,
+                                   client_len, DNS_RCODE_NXDOMAIN);
+    }
+
+    if (qtype == DNS_QTYPE_A) {
+        response_len = dns_build_a_response(query, query_len, response,
+                                            sizeof(response), entry->ip, 300);
+        if (response_len > 0 &&
+            send_packet(client_fd, response, response_len,
+                        client_addr, client_len) == 0) {
+            LOG_INFO("LOCAL", "qname=%s ip=%s", qname, inet_ntoa(entry->ip));
+            return 0;
+        }
+        LOG_ERROR("ERROR", "failed to send local A response for qname=%s", qname);
         return -1;
     }
 
-    upstream_len = sizeof(upstream_addr);
-    resp_len = recvfrom(upstream_fd, response, sizeof(response), 0,
-                        (struct sockaddr *)&upstream_addr, &upstream_len);
-    if (resp_len < 0) {
-        close(upstream_fd);
-        return -1;
+    LOG_INFO("LOCAL", "qname=%s qtype=%u empty NOERROR", qname, qtype);
+    return send_error_response(client_fd, query, query_len, client_addr,
+                               client_len, DNS_RCODE_NOERROR);
+}
+
+static void relay_query(int client_fd, int upstream_fd,
+                        const struct sockaddr_in *upstream_addr,
+                        unsigned char *query, int query_len,
+                        const struct sockaddr_in *client_addr,
+                        uint16_t original_id, const char *qname,
+                        uint16_t qtype, uint16_t qclass, time_t now) {
+    uint16_t new_id;
+    int map_result;
+
+    new_id = allocate_upstream_id();
+    if (new_id == 0) {
+        LOG_ERROR("ERROR", "no transaction id available for qname=%s", qname);
+        send_error_response(client_fd, query, query_len, client_addr,
+                            sizeof(*client_addr), DNS_RCODE_SERVFAIL);
+        return;
     }
 
-    if (dns_cache_store(&g_cache, qname, qtype, qclass, response, (int)resp_len,
-                        time(NULL)) == 0) {
-        LOG_DEBUG("CACHE", "stored qname=%s", qname);
+    map_result = add_record(original_id, new_id, client_addr->sin_addr,
+                            client_addr->sin_port, qname, qtype, qclass,
+                            query, query_len, now);
+    if (map_result != 0) {
+        LOG_ERROR("ERROR", "id map full for qname=%s", qname);
+        send_error_response(client_fd, query, query_len, client_addr,
+                            sizeof(*client_addr), DNS_RCODE_SERVFAIL);
+        return;
     }
 
-    *(uint16_t *)response = htons(original_id);
+    dns_write_id(query, new_id);
+    if (send_packet(upstream_fd, query, query_len,
+                    upstream_addr, sizeof(*upstream_addr)) != 0) {
+        id_map_record_t *record = find_record_by_new_id(new_id);
 
-    sent = sendto(sockfd, response, (size_t)resp_len, 0,
-                  (const struct sockaddr *)client_addr, sizeof(*client_addr));
-    close(upstream_fd);
-
-    if (sent < 0) {
-        return -1;
+        if (record != NULL) {
+            release_record(record);
+        }
+        dns_write_id(query, original_id);
+        LOG_ERROR("ERROR", "failed to relay qname=%s", qname);
+        send_error_response(client_fd, query, query_len, client_addr,
+                            sizeof(*client_addr), DNS_RCODE_SERVFAIL);
+        return;
     }
 
-    LOG_INFO("RELAY", "qname=%s upstream=%s len=%zd", qname, upstream_ip, resp_len);
-    return 0;
+    LOG_INFO("RELAY", "qname=%s original_id=%u new_id=%u upstream=%s",
+             qname, original_id, new_id, inet_ntoa(upstream_addr->sin_addr));
+}
+
+static void handle_client_query(int client_fd, int upstream_fd,
+                                const struct sockaddr_in *upstream_addr) {
+    unsigned char query[DNS_MAX_MESSAGE];
+    unsigned char response[DNS_MAX_MESSAGE];
+    char qname[DNS_MAX_NAME_LEN + 1];
+    struct sockaddr_in client_addr;
+    socklen_t client_len = sizeof(client_addr);
+    const config_entry_t *entry;
+    uint16_t original_id;
+    uint16_t qtype;
+    uint16_t qclass;
+    ssize_t received;
+    time_t now;
+    int local_result;
+
+    received = recvfrom(client_fd, query, sizeof(query), 0,
+                        (struct sockaddr *)&client_addr, &client_len);
+    if (received < 0) {
+        return;
+    }
+    if (received < 12) {
+        return;
+    }
+
+    original_id = dns_read_id(query);
+    if (dns_parse_query(query, (int)received, qname, sizeof(qname),
+                        &qtype, &qclass) != 0) {
+        send_error_response(client_fd, query, (int)received, &client_addr,
+                            client_len, DNS_RCODE_FORMAT);
+        return;
+    }
+
+    if (qclass != DNS_QCLASS_IN) {
+        send_error_response(client_fd, query, (int)received, &client_addr,
+                            client_len, DNS_RCODE_NOTIMP);
+        return;
+    }
+
+    entry = config_lookup(&g_config, qname);
+    if (entry != NULL) {
+        local_result = try_local_response(client_fd, query, (int)received,
+                                          &client_addr, client_len, qname,
+                                          qtype, entry);
+        if (local_result <= 0) {
+            return;
+        }
+    }
+
+    now = time(NULL);
+    {
+        int cached_len;
+        uint32_t ttl_remaining = 0;
+        int cache_hit;
+
+        cache_hit = dns_cache_lookup(&g_cache, qname, qtype, qclass, now,
+                                     response, sizeof(response),
+                                     &cached_len, &ttl_remaining);
+        if (cache_hit > 0) {
+            dns_write_id(response, original_id);
+            if (send_packet(client_fd, response, cached_len,
+                            &client_addr, client_len) == 0) {
+                LOG_INFO("CACHE", "qname=%s ttl=%u", qname, ttl_remaining);
+            }
+            return;
+        }
+    }
+
+    relay_query(client_fd, upstream_fd, upstream_addr, query, (int)received,
+                &client_addr, original_id, qname, qtype, qclass, now);
 }
 
 int main(int argc, char **argv) {
     options_t options;
-    int sockfd;
-    struct sockaddr_in server_addr;
+    struct sockaddr_in client_bind_addr;
+    struct sockaddr_in upstream_addr;
+    int client_fd;
+    int upstream_fd;
     int reuse = 1;
+    int maxfd;
 
     if (options_parse(&options, argc, argv) != 0) {
         options_print_usage(argv[0], stderr);
@@ -161,37 +350,58 @@ int main(int argc, char **argv) {
         return EXIT_SUCCESS;
     }
 
+    if (net_compat_init() != 0) {
+        fprintf(stderr, "network init failed\n");
+        return EXIT_FAILURE;
+    }
+
     logger_init(options.verbosity);
 
-    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sockfd < 0) {
-        LOG_ERROR("ERROR", "socket: %s", strerror(errno));
-        return EXIT_FAILURE;
-    }
-
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
-        LOG_ERROR("ERROR", "setsockopt SO_REUSEADDR: %s", strerror(errno));
-        close(sockfd);
-        return EXIT_FAILURE;
-    }
-
-    memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    if (inet_pton(AF_INET, options.bind_ip, &server_addr.sin_addr) != 1) {
+    memset(&client_bind_addr, 0, sizeof(client_bind_addr));
+    client_bind_addr.sin_family = AF_INET;
+    client_bind_addr.sin_port = htons(options.listen_port);
+    if (inet_pton(AF_INET, options.bind_ip, &client_bind_addr.sin_addr) != 1) {
         LOG_ERROR("ERROR", "invalid bind IP: %s", options.bind_ip);
-        close(sockfd);
+        net_compat_cleanup();
         return EXIT_FAILURE;
     }
-    server_addr.sin_port = htons(options.listen_port);
 
-    if (bind(sockfd, (const struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-        if (errno == EACCES) {
-            LOG_ERROR("ERROR", "bind permission denied (port %u may need root)",
-                      options.listen_port);
-        } else {
-            LOG_ERROR("ERROR", "bind: %s", strerror(errno));
-        }
-        close(sockfd);
+    memset(&upstream_addr, 0, sizeof(upstream_addr));
+    upstream_addr.sin_family = AF_INET;
+    upstream_addr.sin_port = htons(DNS_PORT);
+    if (inet_pton(AF_INET, options.upstream_ip, &upstream_addr.sin_addr) != 1) {
+        LOG_ERROR("ERROR", "invalid upstream IP: %s", options.upstream_ip);
+        net_compat_cleanup();
+        return EXIT_FAILURE;
+    }
+
+    client_fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (client_fd < 0) {
+        LOG_ERROR("ERROR", "socket client failed");
+        net_compat_cleanup();
+        return EXIT_FAILURE;
+    }
+
+    if (setsockopt(client_fd, SOL_SOCKET, SO_REUSEADDR,
+                   (const char *)&reuse, sizeof(reuse)) < 0) {
+        close(client_fd);
+        net_compat_cleanup();
+        return EXIT_FAILURE;
+    }
+
+    if (bind(client_fd, (const struct sockaddr *)&client_bind_addr,
+             sizeof(client_bind_addr)) < 0) {
+        LOG_ERROR("ERROR", "bind failed on %s:%u (need admin for port 53)",
+                  options.bind_ip, options.listen_port);
+        close(client_fd);
+        net_compat_cleanup();
+        return EXIT_FAILURE;
+    }
+
+    upstream_fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (upstream_fd < 0) {
+        close(client_fd);
+        net_compat_cleanup();
         return EXIT_FAILURE;
     }
 
@@ -205,8 +415,9 @@ int main(int argc, char **argv) {
     }
 
     if (dns_cache_init(&g_cache, options.cache_size) != 0) {
-        LOG_ERROR("ERROR", "cache init failed (size=%zu)", options.cache_size);
-        close(sockfd);
+        close(upstream_fd);
+        close(client_fd);
+        net_compat_cleanup();
         return EXIT_FAILURE;
     }
 
@@ -216,6 +427,8 @@ int main(int argc, char **argv) {
              options.cache_size);
     fflush(stdout);
 
+    maxfd = client_fd > upstream_fd ? client_fd : upstream_fd;
+
     for (;;) {
         fd_set readfds;
         struct timeval timeout;
@@ -223,156 +436,35 @@ int main(int argc, char **argv) {
         time_t now;
 
         now = time(NULL);
-        clear_timeout_records(now, ID_MAP_TIMEOUT_SEC);
+        process_expired_queries(client_fd);
         dns_cache_purge_expired(&g_cache, now);
 
         FD_ZERO(&readfds);
-        FD_SET(sockfd, &readfds);
+        FD_SET(client_fd, &readfds);
+        FD_SET(upstream_fd, &readfds);
 
         timeout.tv_sec = 0;
         timeout.tv_usec = SELECT_TIMEOUT_USEC;
 
-        ready = select(sockfd + 1, &readfds, NULL, NULL, &timeout);
+        ready = select(maxfd + 1, &readfds, NULL, NULL, &timeout);
         if (ready < 0) {
-            if (errno == EINTR) {
-                continue;
-            }
-            LOG_ERROR("ERROR", "select: %s", strerror(errno));
-            break;
+            continue;
         }
-
         if (ready == 0) {
             continue;
         }
 
-        if (FD_ISSET(sockfd, &readfds)) {
-            unsigned char buffer[DNS_MAX_MESSAGE];
-            struct sockaddr_in client_addr;
-            socklen_t client_len = sizeof(client_addr);
-            ssize_t received;
-
-            received = recvfrom(sockfd, buffer, sizeof(buffer), 0,
-                                (struct sockaddr *)&client_addr, &client_len);
-            if (received < 0) {
-                LOG_ERROR("ERROR", "recvfrom: %s", strerror(errno));
-                continue;
-            }
-
-            if (received < 12) {
-                continue;
-            }
-
-            {
-                char qname[DNS_MAX_NAME_LEN + 1];
-                uint16_t qtype;
-                uint16_t qclass;
-                const config_entry_t *entry;
-                const dns_header_t *hdr;
-                uint16_t original_id;
-
-                if (dns_parse_query(buffer, (int)received, qname, sizeof(qname),
-                                    &qtype, &qclass) != 0) {
-                    send_error_response(sockfd, buffer, (int)received, &client_addr,
-                                      client_len, DNS_RCODE_FORMAT);
-                    continue;
-                }
-
-                hdr = (const dns_header_t *)buffer;
-                original_id = ntohs(hdr->id);
-
-                if (qclass != DNS_QCLASS_IN) {
-                    LOG_INFO("LOCAL", "unsupported qclass=%u qname=%s", qclass, qname);
-                    send_error_response(sockfd, buffer, (int)received, &client_addr,
-                                      client_len, DNS_RCODE_NOTIMP);
-                    continue;
-                }
-
-                entry = config_lookup(&g_config, qname);
-                if (entry != NULL) {
-                    if (entry->block_ipv6_only) {
-                        /* IPv6专项拦截：AAAA→NXDOMAIN，A记录→上游中继 */
-                        if (qtype == DNS_QTYPE_AAAA) {
-                            LOG_INFO("BLOCK", "qname=%s IPv6 blocked", qname);
-                            send_error_response(sockfd, buffer, (int)received, &client_addr,
-                                              client_len, DNS_RCODE_NXDOMAIN);
-                        } else if (qtype == DNS_QTYPE_A) {
-                            LOG_INFO("LOCAL", "qname=%s qtype=A relay to upstream (IPv6 blocked)",
-                                     qname);
-                            if (relay_to_upstream(sockfd, options.upstream_ip, buffer,
-                                                  (int)received, original_id, &client_addr,
-                                                  qname, qtype, qclass) != 0) {
-                                send_error_response(sockfd, buffer, (int)received, &client_addr,
-                                                  client_len, DNS_RCODE_SERVFAIL);
-                            }
-                        } else {
-                            LOG_INFO("LOCAL", "qname=%s qtype=%u relay to upstream (IPv6 blocked)",
-                                     qname, qtype);
-                            if (relay_to_upstream(sockfd, options.upstream_ip, buffer,
-                                                  (int)received, original_id, &client_addr,
-                                                  qname, qtype, qclass) != 0) {
-                                send_error_response(sockfd, buffer, (int)received, &client_addr,
-                                                  client_len, DNS_RCODE_SERVFAIL);
-                            }
-                        }
-                    } else if (entry->ip.s_addr == 0) {
-                        LOG_INFO("BLOCK", "qname=%s", qname);
-                        send_error_response(sockfd, buffer, (int)received, &client_addr,
-                                          client_len, DNS_RCODE_NXDOMAIN);
-                    } else if (qtype == DNS_QTYPE_A) {
-                        unsigned char resp[DNS_MAX_MESSAGE];
-                        int rlen;
-
-                        rlen = dns_build_a_response(buffer, (int)received, resp,
-                                                    sizeof(resp), entry->ip, 300);
-                        if (rlen > 0) {
-                            send_packet(sockfd, resp, rlen, &client_addr, client_len);
-                            LOG_INFO("LOCAL", "qname=%s ip=%s", qname,
-                                     inet_ntoa(entry->ip));
-                        }
-                    } else {
-                        LOG_INFO("LOCAL", "qname=%s qtype=%u local hit, relay to upstream",
-                                 qname, qtype);
-                        /* 本地只有 IPv4，非 A 查询转发上游，避免空响应被 nslookup 判超时 */
-                        if (relay_to_upstream(sockfd, options.upstream_ip, buffer,
-                                              (int)received, original_id, &client_addr,
-                                              qname, qtype, qclass) != 0) {
-                            send_error_response(sockfd, buffer, (int)received, &client_addr,
-                                              client_len, DNS_RCODE_SERVFAIL);
-                        }
-                    }
-                    continue;
-                }
-
-                {
-                    unsigned char cached_resp[DNS_MAX_MESSAGE];
-                    int cached_len = 0;
-                    uint32_t ttl_remaining = 0;
-                    int cache_hit;
-
-                    cache_hit = dns_cache_lookup(&g_cache, qname, qtype, qclass, now,
-                                                 cached_resp, sizeof(cached_resp),
-                                                 &cached_len, &ttl_remaining);
-                    if (cache_hit > 0) {
-                        *(uint16_t *)cached_resp = htons(original_id);
-                        if (send_packet(sockfd, cached_resp, cached_len,
-                                        &client_addr, client_len) == 0) {
-                            LOG_INFO("CACHE", "qname=%s ttl=%u", qname, ttl_remaining);
-                        }
-                        continue;
-                    }
-                }
-
-                if (relay_to_upstream(sockfd, options.upstream_ip, buffer,
-                                      (int)received, original_id, &client_addr,
-                                      qname, qtype, qclass) != 0) {
-                    send_error_response(sockfd, buffer, (int)received, &client_addr,
-                                      client_len, DNS_RCODE_SERVFAIL);
-                }
-            }
+        if (FD_ISSET(client_fd, &readfds)) {
+            handle_client_query(client_fd, upstream_fd, &upstream_addr);
+        }
+        if (FD_ISSET(upstream_fd, &readfds)) {
+            handle_upstream_response(client_fd, upstream_fd, &upstream_addr);
         }
     }
 
     dns_cache_destroy(&g_cache);
-    close(sockfd);
+    close(upstream_fd);
+    close(client_fd);
+    net_compat_cleanup();
     return EXIT_FAILURE;
 }
