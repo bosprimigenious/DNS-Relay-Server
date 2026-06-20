@@ -1,145 +1,230 @@
-Screenshot 2: server startup (stderr + stdout)
-$ DNS_RELAY_BIND=127.0.0.1 DNS_RELAY_PORT=15353 ./dnsrelay
+﻿Screenshot 2: server startup (stderr + stdout)
+$ .\dnsrelay.exe -b 127.0.0.1 -p 15353 -f C:\Fullstack_Development\DNS-Relay-Server\dnsrelay.txt -v
 --- stderr (config load) ---
+[INFO] [INFO] loaded 208 entries from C:\Fullstack_Development\DNS-Relay-Server\dnsrelay.txt
+
++------------------+---------------+------------+----------------+
+| Domain           | IPv4 config   | A query    | AAAA query     |
++------------------+---------------+------------+----------------+
+| baidu.com        | (not in file) | RELAY      | RELAY          |
+| bupt             | 123.127.134.10  | A record   | NOERROR(empty) |
+| 008.cn           | 0.0.0.0         | NXDOMAIN   | NXDOMAIN       |
+| 2qq.cn           | 0.0.0.0         | NXDOMAIN   | NXDOMAIN       |
+| 555.265.com      | 0.0.0.0         | NXDOMAIN   | NXDOMAIN       |
+| abc.265.com      | 0.0.0.0         | NXDOMAIN   | NXDOMAIN       |
+| abcdesign.ru     | 0.0.0.0         | NXDOMAIN   | NXDOMAIN       |
+| ad.qingyule.com  | 0.0.0.0         | NXDOMAIN   | NXDOMAIN       |
+| alexey.pioneers.com.ru | 0.0.0.0         | NXDOMAIN   | NXDOMAIN       |
+| baltnet.ru       | 0.0.0.0         | NXDOMAIN   | NXDOMAIN       |
+| cctv1.net        | 0.0.0.0         | NXDOMAIN   | NXDOMAIN       |
++------------------+---------------+------------+----------------+
+| 0.0.0.0 = full block (A+AAAA NXDOMAIN)                       |
+| :: = IPv6-only block (A relay, AAAA NXDOMAIN)                 |
+| other IPv4 = local A; AAAA empty NOERROR (fix-A)             |
+| not in table = upstream relay via -s                         |
++--------------------------------------------------------------+
+Total loaded: 208 entries (table shows course cases + samples)
+
+[INFO] [INFO] relay mode: async (寮傛涓婃父涓户锛堝弻 socket + select 闈為樆濉炶浆鍙戯級)
+[INFO] [INFO] build tag: win-fast3
+[INFO] [INFO] listening on 127.0.0.1:15353 upstream=114.114.114.114 cache=1024
+
 --- stdout (listen) ---
 
+
 Screenshot 3: course case1 nslookup bupt local A
-$ nslookup -port=15353 bupt 127.0.0.1
-Server:        127.0.0.1
-Address:    127.0.0.1#15353
+$ nslookup -port=15353 bupt 127.0.0.1 nslookup : *** 请求 UnKnown 超时
+所在位置 C:\Fullstack_Development\DNS-Relay-Server\platform\windows\verify\run_verification.ps1:45 字符: 38
++ ...  $r = Invoke-LoggedExternal { nslookup -port=$Port $Name $Bind 2>&1 }
++                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (*** 请求 UnKnown 超时:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
 
-Non-authoritative answer:
-Name:    bupt
-Address: 123.127.134.10
+DNS request timed out.
+    timeout was 2 seconds.
+服务器:  UnKnown
+Address:  127.0.0.1
 
-
+DNS request timed out.
+    timeout was 2 seconds.
+DNS request timed out.
+    timeout was 2 seconds.
+ 
 Screenshot 4: course case2 nslookup 008.cn block NXDOMAIN
-$ nslookup -port=15353 008.cn 127.0.0.1
-Server:        127.0.0.1
-Address:    127.0.0.1#15353
+$ nslookup -port=15353 008.cn 127.0.0.1 nslookup : *** 请求 UnKnown 超时
+所在位置 C:\Fullstack_Development\DNS-Relay-Server\platform\windows\verify\run_verification.ps1:45 字符: 38
++ ...  $r = Invoke-LoggedExternal { nslookup -port=$Port $Name $Bind 2>&1 }
++                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (*** 请求 UnKnown 超时:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
 
-** server can't find 008.cn: NXDOMAIN
+DNS request timed out.
+    timeout was 2 seconds.
+服务器:  UnKnown
+Address:  127.0.0.1
 
-
+DNS request timed out.
+    timeout was 2 seconds.
+DNS request timed out.
+    timeout was 2 seconds.
+DNS request timed out.
+    timeout was 2 seconds.
+DNS request timed out.
+    timeout was 2 seconds.
+ 
 Screenshot 5: course case3 nslookup baidu.com upstream relay
-$ nslookup -port=15353 baidu.com 127.0.0.1
-Server:        127.0.0.1
-Address:    127.0.0.1#15353
+$ nslookup -port=15353 baidu.com 127.0.0.1 nslookup : *** 请求 UnKnown 超时
+所在位置 C:\Fullstack_Development\DNS-Relay-Server\platform\windows\verify\run_verification.ps1:45 字符: 38
++ ...  $r = Invoke-LoggedExternal { nslookup -port=$Port $Name $Bind 2>&1 }
++                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (*** 请求 UnKnown 超时:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
 
-Non-authoritative answer:
-Name:    baidu.com
-Address: 111.63.65.103
-Name:    baidu.com
-Address: 111.63.65.247
-Name:    baidu.com
-Address: 124.237.177.164
-Name:    baidu.com
-Address: 110.242.74.102
+DNS request timed out.
+    timeout was 2 seconds.
+服务器:  UnKnown
+Address:  127.0.0.1
 
-
+DNS request timed out.
+    timeout was 2 seconds.
+DNS request timed out.
+    timeout was 2 seconds.
+DNS request timed out.
+    timeout was 2 seconds.
+DNS request timed out.
+    timeout was 2 seconds.
+ 
 Screenshot 6: config test0 block (0.0.0.0 test0)
-$ nslookup -port=15353 test0 127.0.0.1
-Server:        127.0.0.1
-Address:    127.0.0.1#15353
+$ nslookup -port=15353 test0 127.0.0.1 nslookup : *** 请求 UnKnown 超时
+所在位置 C:\Fullstack_Development\DNS-Relay-Server\platform\windows\verify\run_verification.ps1:45 字符: 38
++ ...  $r = Invoke-LoggedExternal { nslookup -port=$Port $Name $Bind 2>&1 }
++                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (*** 请求 UnKnown 超时:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
 
-** server can't find test0: NXDOMAIN
+DNS request timed out.
+    timeout was 2 seconds.
+服务器:  UnKnown
+Address:  127.0.0.1
 
-
+DNS request timed out.
+    timeout was 2 seconds.
+DNS request timed out.
+    timeout was 2 seconds.
+ 
 Screenshot 7: config test1 local (11.111.11.111 test1)
-$ nslookup -port=15353 test1 127.0.0.1
-Server:        127.0.0.1
-Address:    127.0.0.1#15353
+$ nslookup -port=15353 test1 127.0.0.1 nslookup : *** 请求 UnKnown 超时
+所在位置 C:\Fullstack_Development\DNS-Relay-Server\platform\windows\verify\run_verification.ps1:45 字符: 38
++ ...  $r = Invoke-LoggedExternal { nslookup -port=$Port $Name $Bind 2>&1 }
++                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (*** 请求 UnKnown 超时:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
 
-Non-authoritative answer:
-Name:    test1
-Address: 11.111.11.111
+DNS request timed out.
+    timeout was 2 seconds.
+服务器:  UnKnown
+Address:  127.0.0.1
 
-
+DNS request timed out.
+    timeout was 2 seconds.
+DNS request timed out.
+    timeout was 2 seconds.
+ 
 Screenshot 8: nslookup sina second local record
-$ nslookup -port=15353 sina 127.0.0.1
-Server:        127.0.0.1
-Address:    127.0.0.1#15353
+$ nslookup -port=15353 sina 127.0.0.1 nslookup : *** 请求 UnKnown 超时
+所在位置 C:\Fullstack_Development\DNS-Relay-Server\platform\windows\verify\run_verification.ps1:45 字符: 38
++ ...  $r = Invoke-LoggedExternal { nslookup -port=$Port $Name $Bind 2>&1 }
++                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (*** 请求 UnKnown 超时:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
 
-Non-authoritative answer:
-Name:    sina
-Address: 202.108.33.89
+DNS request timed out.
+    timeout was 2 seconds.
+服务器:  UnKnown
+Address:  127.0.0.1
 
-
+DNS request timed out.
+    timeout was 2 seconds.
+DNS request timed out.
+    timeout was 2 seconds.
+ 
 Screenshot 9: fix-A nslookup mx bupt empty NOERROR
-$ nslookup -port=15353 -type=mx bupt 127.0.0.1
-Server:        127.0.0.1
-Address:    127.0.0.1#15353
+$ nslookup -port=15353 -type=mx bupt 127.0.0.1 nslookup : *** 请求 UnKnown 超时
+所在位置 C:\Fullstack_Development\DNS-Relay-Server\platform\windows\verify\run_verification.ps1:42 字符: 38
++ ... LoggedExternal { nslookup -port=$Port -type=$Qtype $Name $Bind 2>&1 }
++                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (*** 请求 UnKnown 超时:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
 
-Non-authoritative answer:
-*** Can't find bupt: No answer
+DNS request timed out.
+    timeout was 2 seconds.
+服务器:  UnKnown
+Address:  127.0.0.1
 
-Authoritative answers can be found from:
-
-
+DNS request timed out.
+    timeout was 2 seconds.
+DNS request timed out.
+    timeout was 2 seconds.
+unknown query type: $Qtype
+ 
 Screenshot 10: dns_query.py protocol check
-$ python3 scripts/dns_query.py 127.0.0.1 15353 bupt 008.cn baidu.com test0 test1
+$ python platform\common\python\dns_query.py 127.0.0.1 15353 bupt 008.cn baidu.com test0 test1
 qname=bupt id=0x1234 rcode=0 ancount=1 len=38
 qname=008.cn id=0x1234 rcode=3 ancount=0 len=24
 qname=baidu.com id=0x1234 rcode=0 ancount=4 len=91
 qname=test0 id=0x1234 rcode=3 ancount=0 len=23
 qname=test1 id=0x1234 rcode=0 ancount=1 len=39
 
+
 Screenshot 11: dig bupt A +noall +answer +comments
 $ dig @127.0.0.1 -p 15353 bupt A +noall +answer +comments
-;; Got answer:
-;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 51827
-;; flags: qr rd ad; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
-;; WARNING: recursion requested but not available
-
+;; ->>HEADER<<- status: NOERROR
 ;; ANSWER SECTION:
-bupt.            300    IN    A    123.127.134.10
+bupt.    300    IN    A    123.127.134.10
 
 
 Screenshot 12: dig 008.cn A +noall +answer +comments
-$ dig @127.0.0.1 -p 15353 008.cn A +noall +answer +comments
-;; Got answer:
-;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 25959
-;; flags: qr rd ad; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 0
-;; WARNING: recursion requested but not available
-;; WARNING: Message has 23 extra bytes at end
+python : Traceback (most recent call last):
+所在位置 C:\Fullstack_Development\DNS-Relay-Server\platform\windows\verify\run_verification.ps1:141 字符: 47
++ ... dExternal { python (Join-Path $py "dig_win.py") $Bind $Port 008.cn 2> ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "C:\Fullstack_Development\DNS-Relay-Server\platform\common\python\dig_win.py", line 79, in <module>
+    main()
+  File "C:\Fullstack_Development\DNS-Relay-Server\platform\common\python\dig_win.py", line 67, in main
+    rows, rcode = parse_a_records(data)
+                  ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Fullstack_Development\DNS-Relay-Server\platform\common\python\dig_win.py", line 37, in parse_a_records
+    off = skip_name(data, off)
+          ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Fullstack_Development\DNS-Relay-Server\platform\common\python\dig_win.py", line 28, in skip_name
+    raise ValueError("bad name")
+ValueError: bad name
 
 
 Screenshot 13: dig baidu.com A +noall +answer +comments
 $ dig @127.0.0.1 -p 15353 baidu.com A +noall +answer +comments
-;; Got answer:
-;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 31981
-;; flags: qr rd ra; QUERY: 1, ANSWER: 4, AUTHORITY: 0, ADDITIONAL: 1
-
-;; OPT PSEUDOSECTION:
-; EDNS: version: 0, flags:; udp: 1232
-; COOKIE: 22802754f2dce8f8010000006a2976d8a04e863334a1ff8b (good)
+;; ->>HEADER<<- status: NOERROR
 ;; ANSWER SECTION:
-baidu.com.        568    IN    A    111.63.65.103
-baidu.com.        568    IN    A    111.63.65.247
-baidu.com.        568    IN    A    124.237.177.164
-baidu.com.        568    IN    A    110.242.74.102
+baidu.com.    552    IN    A    111.63.65.247
+baidu.com.    552    IN    A    110.242.74.102
+baidu.com.    552    IN    A    111.63.65.103
+baidu.com.    552    IN    A    124.237.177.164
 
 
-Screenshot 14: fix-B SERVFAIL (iptables block 114.114.114.114)
-$ sudo iptables -A OUTPUT -d 114.114.114.114 -j DROP
-$ dig @127.0.0.1 -p 15353 not-in-config-xyz123.com A +time=5 +comments
+Screenshot 14: fix-B SERVFAIL (upstream 127.0.0.1 unreachable, ~5s)
+$ python platform\common\python\dns_query.py 127.0.0.1 15353 not-in-config-xyz123.com
+qname=not-in-config-xyz123.com id=0x1234 rcode=2 ancount=0 len=42
 
-; <<>> DiG 9.18.39-0ubuntu0.24.04.5-Ubuntu <<>> @127.0.0.1 -p 15353 not-in-config-xyz123.com A +time=5 +comments
-; (1 server found)
-;; global options: +cmd
-;; Got answer:
-;; ->>HEADER<<- opcode: QUERY, status: SERVFAIL, id: 48727
-;; flags: qr rd ad; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 0
-;; WARNING: recursion requested but not available
-;; WARNING: Message has 23 extra bytes at end
+(Windows: no iptables; uses dead upstream for SERVFAIL demo)
 
-;; QUESTION SECTION:
-;not-in-config-xyz123.com.    IN    A
-
-;; Query time: 0 msec
-;; SERVER: 127.0.0.1#15353(127.0.0.1) (UDP)
-;; WHEN: Wed Jun 10 22:38:16 CST 2026
-;; MSG SIZE  rcvd: 65
-
-(iptables rule removed)
 

@@ -2,7 +2,7 @@
 
 北京邮电大学（BUPT）计算机网络课程设计 —— **DNS 中继服务器**
 
-**Windows 原生开发与验收**（`dnsrelay.exe` + PowerShell `nslookup`），无需 WSL。详见 [docs/WINDOWS.md](docs/WINDOWS.md)。
+**Linux/WSL 与 Windows 原生双平台**开发与验收；源码共用，平台脚本分目录存放。详见 [platform/README.md](platform/README.md)。
 
 ## 分支导航
 
@@ -13,6 +13,18 @@
 | **`main`** | — | 默认克隆入口 |
 
 > 详见 [docs/BRANCHES.md](docs/BRANCHES.md)。
+
+## 项目结构（摘要）
+
+```
+src/ include/          # 跨平台 C11 核心（net_compat 适配 Linux / Windows）
+platform/
+  linux/verify/        # Bash 验收
+  windows/             # PowerShell 构建与验收
+  common/python/       # 共用探针与截图脚本
+Makefile               # Linux 与 Windows 自动识别
+scripts/               # 旧路径兼容包装 → platform/
+```
 
 ## 快速开始（Windows）
 
@@ -28,17 +40,26 @@ mingw32-make clean && mingw32-make
 
 另开终端：`nslookup bupt 127.0.0.1 -port=15353`
 
-## 教室验收
+## 快速开始（Linux / WSL）
+
+```bash
+make clean && make
+DNS_RELAY_BIND=127.0.0.1 DNS_RELAY_PORT=15353 ./dnsrelay -f 参考资料/dnsrelay.txt -v
+```
+
+## 教室验收（Windows）
 
 ```powershell
-.\dnsrelay.exe -b 0.0.0.0 -p 53 -f 参考资料\dnsrelay.txt -v
-powershell -File scripts\classroom_deploy.ps1
-.\scripts\verify_and_screenshot.ps1
+powershell -File platform\windows\ops\start_server.ps1
+powershell -File platform\windows\verify\classroom_deploy.ps1
+powershell -File platform\windows\verify\verify_and_screenshot.ps1
 ```
 
 ## 文档
 
 | 文档 | 路径 |
 |------|------|
+| 双平台目录 | [platform/README.md](platform/README.md) |
 | Windows 指南 | [docs/WINDOWS.md](docs/WINDOWS.md) |
+| Linux 指南 | [platform/linux/README.md](platform/linux/README.md) |
 | 分支说明 | [docs/BRANCHES.md](docs/BRANCHES.md) |

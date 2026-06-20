@@ -1,1 +1,29 @@
-loaded 208 config entries from dnsrelay.txt
+[INFO] [INFO] loaded 208 entries from C:\Fullstack_Development\DNS-Relay-Server\dnsrelay.txt
+
++------------------+---------------+------------+----------------+
+| Domain           | IPv4 config   | A query    | AAAA query     |
++------------------+---------------+------------+----------------+
+| baidu.com        | (not in file) | RELAY      | RELAY          |
+| bupt             | 123.127.134.10  | A record   | NOERROR(empty) |
+| 008.cn           | 0.0.0.0         | NXDOMAIN   | NXDOMAIN       |
+| 2qq.cn           | 0.0.0.0         | NXDOMAIN   | NXDOMAIN       |
+| 555.265.com      | 0.0.0.0         | NXDOMAIN   | NXDOMAIN       |
+| abc.265.com      | 0.0.0.0         | NXDOMAIN   | NXDOMAIN       |
+| abcdesign.ru     | 0.0.0.0         | NXDOMAIN   | NXDOMAIN       |
+| ad.qingyule.com  | 0.0.0.0         | NXDOMAIN   | NXDOMAIN       |
+| alexey.pioneers.com.ru | 0.0.0.0         | NXDOMAIN   | NXDOMAIN       |
+| baltnet.ru       | 0.0.0.0         | NXDOMAIN   | NXDOMAIN       |
+| cctv1.net        | 0.0.0.0         | NXDOMAIN   | NXDOMAIN       |
++------------------+---------------+------------+----------------+
+| 0.0.0.0 = full block (A+AAAA NXDOMAIN)                       |
+| :: = IPv6-only block (A relay, AAAA NXDOMAIN)                 |
+| other IPv4 = local A; AAAA empty NOERROR (fix-A)             |
+| not in table = upstream relay via -s                         |
++--------------------------------------------------------------+
+Total loaded: 208 entries (table shows course cases + samples)
+
+[INFO] [INFO] relay mode: async (异步上游中继（双 socket + select 非阻塞转发）)
+[INFO] [INFO] build tag: win-fast3
+[INFO] [INFO] listening on 127.0.0.1:15353 upstream=127.0.0.1 cache=1024
+[INFO] [RELAY] qname=not-in-config-xyz123.com original_id=4660 new_id=1 upstream=127.0.0.1
+[INFO] [TIMEOUT] qname=not-in-config-xyz123.com original_id=4660 new_id=1

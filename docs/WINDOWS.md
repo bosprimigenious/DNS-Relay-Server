@@ -22,10 +22,10 @@ mingw32-make clean
 mingw32-make
 
 # 方式 B（无 make）
-powershell -ExecutionPolicy Bypass -File scripts\build.ps1
+powershell -ExecutionPolicy Bypass -File platform\windows\build.ps1
 ```
 
-产物：`dnsrelay.exe`
+产物：`dnsrelay.exe`（实现位于 [`platform/windows/`](../platform/windows/README.md)）
 
 ## 本地测试（端口 15353，无需管理员）
 
@@ -57,13 +57,15 @@ nslookup 008.cn 10.x.x.x
 nslookup baidu.com 10.x.x.x
 ```
 
-一键冒烟：`powershell -File scripts\classroom_deploy.ps1`
+一键冒烟：`powershell -File platform\windows\verify\classroom_deploy.ps1`
 
 ## 全量验证 + 报告截图
 
 ```powershell
-.\scripts\verify_and_screenshot.ps1
+powershell -File platform\windows\verify\verify_and_screenshot.ps1
 ```
+
+（`scripts\verify_and_screenshot.ps1` 为兼容包装，效果相同。）
 
 生成 `docs\screenshots\terminal-01-build.png` … `terminal-14-fix-b.png`。
 
@@ -73,4 +75,4 @@ Linux 版用 `iptables` 阻断上游；Windows 版验证脚本改为**临时将�
 
 ## 可选：Linux / WSL
 
-`Makefile` 在 Linux 下仍可用，产物为 `dnsrelay`（无 `.exe`）。课设答辩以 Windows 原生流程为准。
+`Makefile` 在 Linux 下仍可用，产物为 `dnsrelay`（无 `.exe`）。脚本见 [`platform/linux/`](../platform/linux/README.md)。

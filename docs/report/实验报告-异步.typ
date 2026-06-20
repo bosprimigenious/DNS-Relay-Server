@@ -503,7 +503,7 @@ DNS（Domain Name System，域名系统）是互联网命名与寻址体系的�
   ],
 )
 
-本组在 Windows 11 + WSL2（Ubuntu）环境下以 C11 实现该中继程序。策略表来自 `参考资料/dnsrelay.txt`（实测 208 条）；报文语义对齐 `参考资料/RFC1035.TXT`；上游为 `114.114.114.114:53`；主循环以 `select()` 10ms 超时阻塞，兼顾低 CPU 占用与交互式测试响应性。
+本组在 **Windows 11 原生（MinGW `dnsrelay.exe`）与 Linux/WSL2（`dnsrelay`）双平台** 下以 C11 实现该中继程序；网络差异由 `include/platform/net_compat.h` 统一适配，验收脚本分置于 `platform/windows/` 与 `platform/linux/`（`scripts/` 为兼容入口）。策略表来自 `参考资料/dnsrelay.txt`（实测 208 条）；报文语义对齐 `参考资料/RFC1035.TXT`；上游为 `114.114.114.114:53`；主循环以 `select()` 10ms 超时阻塞，兼顾低 CPU 占用与交互式测试响应性。
 
 #keybox(
   [本实现与生产级 DNS 的功能边界],
@@ -539,7 +539,7 @@ DNS（Domain Name System，域名系统）是互联网命名与寻址体系的�
     [*模块*], [*头文件*], [*主要接口与职责*], [*实现文件*],
     [协议层], [`dns_protocol.h`], [`dns_parse_query` 解析查询；`dns_build_a_response` / `dns_build_error_response` 组包；`dns_name_encode`/`decode` 域名编解码], [`dns_protocol.c`],
     [配置层], [`config.h`], [`config_load` 加载 `dnsrelay.txt`；`config_lookup` 大小写不敏感查表], [`config.c`],
-    [ID 映射], [`id_map.h`], [`add_record` 登记会话；`clear_timeout_records` 老化；`find_record_by_new_id` 按新 ID 查找], [`id_map.c`],
+    [ID 映射 / 请求池], [`id_map.h`], [`add_record` 入池；`find_record_by_new_id` 出池路由；`find_expired_record` + `release_record` 超时 SERVFAIL], [`id_map.c`],
     [主控层], [`main.c`], [`select` 双路；`handle_client_query` / `handle_upstream_response`；超时清理], [`main.c`],
   ),
   caption: [模块划分与主要接口一览],
@@ -560,11 +560,11 @@ DNS（Domain Name System，域名系统）是互联网命名与寻址体系的�
   [拦截], [`008.cn`、`test0`→NXDOMAIN，无上游流量], [步骤 4、6、12],
   [中继], [`baidu.com` 公网 A 记录，flags 含 `ra`], [步骤 5、13],
   [fix-A], [MX 查询 bupt→空 NOERROR，不误返 A], [步骤 9、10],
-  [fix-B], [阻断上游→SERVFAIL（约 3s）], [步骤 14（须 root）],
+  [fix-B], [阻断/死上游→SERVFAIL（约 5s，`ID_MAP_TIMEOUT_SEC`）], [步骤 14],
   [互操作], [`nslookup`、`dig` 可正常解析 HEADER], [步骤 3–14],
 )
 
-表 2 所列每一项均可在 WSL 中通过 `.\scripts\verify_and_screenshot.ps1` 一键复现。正式课堂验收时，将测试端口改为 53、命令去掉 `-port=15353` 即可，协议行为不变。
+表 2 所列每一项均可在 Linux/WSL 通过 `bash platform/linux/verify/run_verification.sh`、在 Windows 原生通过 `platform/windows/verify/verify_and_screenshot.ps1` 一键复现（`scripts/` 路径仍兼容）。正式课堂验收时，将测试端口改为 53、命令去掉 `-port=15353` 即可，协议行为不变。
 
 == 功能需求
 
@@ -745,7 +745,7 @@ DNS 传统 UDP 传输报文上限为 512 字节（不含 IP/UDP 首部），由 
 
 + *负责文件*：`config.c`、`id_map.c`、`scripts/*`（策略表、ID 表与验收管线）
 + *配置层*：`config_load` 加载 208 条 `dnsrelay.txt`；`config_lookup`（`strcasecmp`）支撑三路调度
-+ *ID 映射*：`add_record` 环形槽位；`clear_timeout_records`（5s 老化，配合中继换 ID）
++ *ID 映射 / 请求池*：`add_record` 环形槽位入池；`find_record_by_new_id` 出池；`process_expired_queries`（5s 老化 + SERVFAIL）
 + *测试脚本*：14 步 `run_verification.sh`；`dns_query.py` 快检；`gen_terminal_screenshots.py` + PS 一键验收
 + *报告工程*：`实验报告.typ` 排版与 PDF 编译；第四章矩阵与全宽终端实录；目录/书签
 + *联调与证据链*：`03-full-verification.log` 可审计；根目录启动约定；终端 TAB 截图修复与 fix-B root 脚本
@@ -844,7 +844,7 @@ DNS 中继服务器采用单进程、单线程、事件驱动架构，在逻辑�
   [
     空载路径：`select(10ms)` 超时 → `continue`，CPU 占用近 0%。
     有查询路径：`recvfrom` → 查表分支 → `sendto` → 回到 `select`。
-    与主循环流程图上半段一致；上游中继在独立 socket 上 3s 超时，不拖死监听 fd。
+    上游中继在持久 `upstream_fd` 上异步收包；*不*使用 `SO_RCVTIMEO` 阻塞主循环。
   ],
   width: 100%,
 )
@@ -861,9 +861,9 @@ DNS 中继服务器采用单进程、单线程、事件驱动架构，在逻辑�
     [`DNS_RELAY_BIND`], [`127.0.0.1` / 未设置], [监听地址；默认 `INADDR_ANY`],
     [`DNS_RELAY_PORT`], [`15353` / `53`], [UDP 端口；开发 15353，验收 53],
     [`SO_REUSEADDR`], [监听 socket], [重启免 `EADDRINUSE`],
-    [`select` 超时], [`10ms`], [空载低 CPU],
-    [`SO_RCVTIMEO`], [上游临时 socket，`3s`], [fix-B 超时 → SERVFAIL],
-    [上游地址], [`114.114.114.114:53`], [`UPSTREAM_DNS_IP` 宏],
+    [`select` 超时], [`10ms`], [空载低 CPU；每轮扫描请求池过期项],
+    [应用层超时], [`ID_MAP_TIMEOUT_SEC=5`], [fix-B：`process_expired_queries` → SERVFAIL],
+    [上游地址], [`114.114.114.114:53`], [CLI `-s` 可改；默认在 `options.c`],
   ),
   caption: [环境变量与 Socket 配置],
 )
@@ -971,17 +971,43 @@ $(TARGET): $(OBJECTS)
   ],
 )
 
-*收包阶段（主循环流程图上半段）*：每次循环开始时构造 `fd_set`，将监听 socket 注册其中，以 `timeval` 10ms 调用 `select()`。返回值 −1 且 `errno==EINTR` 时重试（被信号中断）；返回 0 表示超时，直接 `continue` 进入下一轮，这是避免忙等待的关键。返回值大于 0 且 `FD_ISSET(sockfd)` 为真时，调用 `recvfrom` 读入 UDP 报文及客户端地址。若 `recvfrom` 失败则 `perror` 后继续服务，不终止进程。若接收字节数小于 12（DNS Header 最小长度），静默丢弃——可能是端口扫描或误发包，回复 FORMERR 反而可能被利用。合法长度报文到达后，先调用 `clear_timeout_records(now, 5)` 清理 ID 映射表中 5 秒前的过期记录，再进入 `dns_parse_query` 提取 QNAME、QTYPE、QCLASS。解析失败则 `dns_build_error_response(..., FORMERR)` 并 `sendto` 回客户端，然后 `continue`。
+*收包阶段（主循环流程图上半段）*：每次循环开始时构造 `fd_set`，将监听 socket 注册其中，以 `timeval` 10ms 调用 `select()`。返回值 −1 且 `errno==EINTR` 时重试（被信号中断）；返回 0 表示超时，直接 `continue` 进入下一轮，这是避免忙等待的关键。返回值大于 0 且 `FD_ISSET(sockfd)` 为真时，调用 `recvfrom` 读入 UDP 报文及客户端地址。若 `recvfrom` 失败则 `perror` 后继续服务，不终止进程。若接收字节数小于 12（DNS Header 最小长度），静默丢弃——可能是端口扫描或误发包，回复 FORMERR 反而可能被利用。合法长度报文到达后，每轮 `select` 前先执行 `process_expired_queries()` 扫描请求池过期项（5s → SERVFAIL），再进入 `dns_parse_query` 提取 QNAME、QTYPE、QCLASS。解析失败则 `dns_build_error_response(..., FORMERR)` 并 `sendto` 回客户端，然后 `continue`。
 
 *分发阶段*：查表命中 → 拦截/本地/fix-A 同同步版；未命中且缓存未命中 → `handle_client_query` 内 `sendto(upstream_fd)` 后*立即*回到 `select`，响应由 `handle_upstream_response` 异步送回。fix-B：send 失败当场 SERVFAIL，或 5s 后 `process_expired_queries`。
 
 本地拦截不向公网产生任何流量；本地解析使实验域名无需 BIND 即可演示 A 记录；异步上游中继对客户端透明，且*多条中继可并行处于在途状态*（受 ID 表容量 1024 约束）。与同步版相比，到达率 \(\lambda\) 较高时完成时间不再随单线程阻塞线性恶化——§4.5 dnsperf stress 对比可验证。
 
-== ID 映射表设计
+== 异步请求记录池（高并发语义）
+
+#keybox(
+  [重要说明：*不是* 多线程 / 多进程并发],
+  [
+    *本程序并发模型*：*单进程、单线程* + `select(client_fd ∪ upstream_fd, 10ms)` 事件驱动。
+    *未使用* `pthread`、线程池、fork 或多 worker——ID 映射表无需互斥锁。
+    报告中的「高并发」指*多条上游中继查询可同时处于在途（in-flight）*：主循环在 RTT 等待期间仍能 `recvfrom` 新客户端报文、仍能 `recvfrom` 其他查询的上游响应；*不是* CPU 多核并行。
+  ],
+)
+
+*为何需要请求记录池*：异步中继在 `sendto(upstream_fd)` 后*立即*返回主循环，此时上游尚未回包。客户端 Transaction ID 已被改写为 `new_id`，若不在内存中保存「`new_id` ↔ 客户端地址 ↔ 原始 query」，则上游响应到达时无法还原 ID、无法 `sendto` 回正确客户端。该状态集合即 *请求记录池*（实现于 `id_map.c`，容量 `ID_MAP_SIZE=1024`）。
+
+*池子一条记录存什么*：除 `original_id` / `new_id` / `client_ip` / `client_port` / `created_at` 外，还保存 *完整 query 报文副本*（512B）、`qname`、`qtype`、`qclass`——供超时 fix-B 用原始 Question 构造 SERVFAIL，以及日志 `[TIMEOUT]` 打印域名。
+
+*入池 / 出池 / 超时*（与 `main.c` 一致）：
+
++ *入池*：`relay_query` → `allocate_upstream_id()`（扫描池内避免 new_id 冲突）→ `add_record(...)` 环形写入 `g_records[]` → 改写 ID → `sendto` 上游。
++ *正常出池*：`handle_upstream_response` → `find_record_by_new_id(new_id)` → 还原 ID → 回客户端 → `release_record()` 清零槽位。
++ *超时出池*：每轮 `select` 前 `process_expired_queries()` → `find_expired_record(now, 5)` → 用池中 query 副本发 SERVFAIL → `release_record()`。
++ *池满 / send 失败*：当场 SERVFAIL，避免无声占用槽位。
+
+*如何解决教室「多人同时查」*：同步版在一条中继上阻塞 `recvfrom`，第二条查询排队；异步版在 RTT 窗口内可继续接收新查询，*在途* 中继数受 1024 槽限制。dnsperf stress（§4.5）对比的是*在途并行度*，而非多线程吞吐。
+
+*与多线程方案对比（设计取舍）*：多线程 relay 需对 ID 表加锁或分片；课设数据规模下，*单线程 + select + 固定数组池* 更简单、无竞态、易答辩演示。若生产环境 QPS 更高，可升级为 `epoll` + 更大池或分片锁——超出本课题边界。
+
+== ID 映射表与池实现
 
 DNS 中继的一个核心难点是 Transaction ID 管理。客户端查询报文首部含 16 位 ID，用于匹配响应；多个客户端可能同时使用相同 ID 发起查询。转发至上游时必须为本机发出的每条查询分配新的 ID，并记录「original_id ↔ new_id ↔ 客户端 IP/端口」；上游响应返回后，根据 new_id 找到记录，将响应 ID 还原为 original_id 再发回客户端。
 
-本组 ID 映射表容量 1024，每条记录含 query 副本（供超时 SERVFAIL 组包）、qname、qtype、qclass 与时间戳。`handle_upstream_response` 成功回包后 `release_record`；超时路径 `process_expired_queries` 调用 `send_error_response(..., SERVFAIL)` 后释放。
+本组*请求记录池*容量 1024，每条 `id_map_record_t` 含 query 副本（供超时 SERVFAIL 组包）、qname、qtype、qclass 与时间戳。`handle_upstream_response` 成功回包后 `release_record`；超时路径 `process_expired_queries` 调用 `send_error_response(..., SERVFAIL)` 后释放。
 
 *异步版语义*：`find_record_by_new_id` 为*必经*路径；对比 `main` 同步版：响应在 `relay_to_upstream` 栈内完成，不查表回包。
 
@@ -998,10 +1024,12 @@ DNS 中继的一个核心难点是 Transaction ID 管理。客户端查询报文
     [`new_id`], [`uint16_t`], [转发上游时替换的新 ID],
     [`client_ip`], [`struct in_addr`], [客户端 IPv4，用于回包路由],
     [`client_port`], [`uint16_t`], [客户端 UDP 端口],
-    [`created_at`], [`time_t`], [插入时间；`clear_timeout_records` 清理依据],
-    [`in_use`], [`int`], [槽位占用标记；环形分配 + 线性探测],
+    [`created_at`], [`time_t`], [入池时间；≥5s 由 `find_expired_record` 判定超时],
+    [`qname` / `qtype` / `qclass`], [字符串 / 16 位], [日志与调试；非 A 不 relay 时通常不入池],
+    [`query` / `query_len`], [512B / int], [原始查询副本；fix-B 组 SERVFAIL],
+    [`in_use`], [`int`], [槽位占用；环形指针 `g_next_slot` 分配],
   ),
-  caption: [表 10 ID 映射记录结构（id_map_record_t）],
+  caption: [表 10 请求记录池单槽结构（id_map_record_t，`ID_MAP_SIZE=1024`）],
 )
 
 #codefile("src/id_map.c — add_record")[
@@ -1019,8 +1047,8 @@ g_next_slot = (g_next_slot + 1) % ID_MAP_SIZE;
   "../../diagrams/id-relay.svg",
   [图 7 上游中继 ID 替换与还原],
   [
-    客户端查询带 `original_id`；转发上游前替换为 `new_id` 并 `add_record`；上游响应返回后还原 ID 再 `sendto` 客户端。
-    多客户端并发时若不复用 ID，响应可能错配。超时 3 秒走 SERVFAIL（fix-B），对应步骤 14 终端截图。
+    客户端查询带 `original_id`；转发上游前替换为 `new_id` 并*入池* `add_record`；上游响应返回后 `find_record_by_new_id` 还原 ID 再 `sendto` 客户端。
+    多客户端并发时若不复用 ID 或不入池，响应会错配。超时 5s 走 SERVFAIL（fix-B），对应步骤 14 终端截图。
   ],
 )
 

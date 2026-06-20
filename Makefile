@@ -35,7 +35,9 @@ report-sync:
 
 report-async:
 	cd $(REPORT_DIR) && typst compile --root $(TYPST_ROOT) 实验报告-异步.typ 实验报告-异步.pdf
+	cp $(REPORT_DIR)/实验报告-异步.pdf 实验报告.pdf
 	@echo "Built $(REPORT_DIR)/实验报告-异步.pdf"
+	@echo "Submit copy: ./实验报告.pdf (async)"
 
 report: report-sync report-async
 	cp $(REPORT_DIR)/实验报告-同步.pdf 实验报告.pdf
